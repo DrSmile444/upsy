@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 72" width="96" height="72" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Bluetti EB3A">
+  <!-- Source of truth for the station glyph. Parts with an id are recoloured from live data:
+       ac-in, dc-in, ac-out, dc-out, battery-fill (width = 22 * percent / 100). -->
+  <path id="handle" d="M18 16 V10 Q18 5 23 5 H73 Q78 5 78 10 V16"/>
+  <rect id="body" x="8" y="16" width="80" height="50" rx="9"/>
+  <g id="display">
+    <rect x="15" y="23" width="30" height="18" rx="3"/>
+    <rect id="battery-fill" x="19" y="28" width="22" height="8" rx="1.5" fill="currentColor" stroke="none"/>
+  </g>
+  <g id="ac-out">
+    <circle cx="68" cy="33" r="10"/>
+    <circle cx="64.5" cy="33" r="1.6" fill="currentColor" stroke="none"/>
+    <circle cx="71.5" cy="33" r="1.6" fill="currentColor" stroke="none"/>
+  </g>
+  <g id="dc-out">
+    <rect x="15" y="51" width="7" height="4" rx="1"/>
+    <rect x="26" y="51" width="7" height="4" rx="1"/>
+    <rect x="37" y="51.5" width="7" height="3" rx="1.5"/>
+    <circle cx="68" cy="53" r="4.5"/>
+  </g>
+  <path id="ac-in" d="M8 40 H2 M8 46 H2"/>
+  <path id="dc-in" d="M88 40 H94 M88 46 H94"/>
+</svg>

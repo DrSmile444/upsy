@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>upsy design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600&display=swap" rel="stylesheet">
+<style>
+/* ---------------------------------------------------------------------------------------------
+   Tokens. Windows 11 (Fluent) values for the native surfaces; the brand palette is used only by
+   the mascot, the app icon and the wordmark. Every frame is rendered twice, once per theme, by
+   scoping the tokens to .t-light / .t-dark.
+   --------------------------------------------------------------------------------------------- */
+:root {
+  --brand-mustard: #E3A72F; --brand-teal: #2F7F7A; --brand-rust: #D2602F;
+  --brand-cream: #F6ECD6; --brand-ink: #3A2A22; --brand-olive: #7A8F35;
+  --canvas: #E9E4DA; --canvas-ink: #2B2420; --canvas-muted: #6A5F57;
+}
+.t-light {
+  --taskbar: #EEEEEE; --taskbar-ink: #1B1B1B;
+  --flyout: #F9F9F9; --flyout-stroke: rgba(0,0,0,.10); --card: #FFFFFF; --card-stroke: rgba(0,0,0,.06);
+  --ink: #1B1B1B; --ink-2: #5C5C5C; --ink-3: #8A8A8A; --divider: rgba(0,0,0,.08);
+  --subtle-hover: rgba(0,0,0,.04); --focus: #1B1B1B;
+  --accent: #005FB8; --on-accent: #FFFFFF;
+  --ok: #0F7B0F; --caution: #9D5D00; --critical: #C42B1C;
+  --glyph: #5C5C5C; --glyph-on: #1B1B1B;
+  --shadow: 0 8px 16px rgba(0,0,0,.14);
+  --menu: #F9F9F9; --tooltip: #F9F9F9;
+}
+.t-dark {
+  --taskbar: #1C1C1C; --taskbar-ink: #FFFFFF;
+  --flyout: #2C2C2C; --flyout-stroke: rgba(255,255,255,.08); --card: rgba(255,255,255,.05); --card-stroke: rgba(255,255,255,.06);
+  --ink: #FFFFFF; --ink-2: #C8C8C8; --ink-3: #9D9D9D; --divider: rgba(255,255,255,.08);
+  --subtle-hover: rgba(255,255,255,.06); --focus: #FFFFFF;
+  --accent: #60CDFF; --on-accent: #000000;
+  --ok: #6CCB5F; --caution: #FCE100; --critical: #FF99A4;
+  --glyph: #9D9D9D; --glyph-on: #FFFFFF;
+  --shadow: 0 8px 16px rgba(0,0,0,.36);
+  --menu: #2C2C2C; --tooltip: #2B2B2B;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--canvas); color: var(--canvas-ink);
+  font: 14px/1.45 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; }
+.page { min-width: 1100px; padding: 56px 64px 120px; }
+header.doc { display: flex; gap: 28px; align-items: center; margin-bottom: 40px; }
+header.doc img { width: 96px; height: 96px; }
+header.doc h1 { font: 600 40px/1 Fredoka, "Segoe UI", sans-serif; margin: 0 0 6px; color: var(--brand-ink); letter-spacing: -.01em; }
+header.doc p { margin: 0; max-width: 70ch; color: var(--canvas-muted); }
+section.board { margin-top: 56px; }
+section.board > h2 { font: 600 22px/1.2 "Segoe UI Variable Display", "Segoe UI", sans-serif; margin: 0 0 6px; }
+section.board > p { margin: 0 0 20px; max-width: 80ch; color: var(--canvas-muted); }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.stage { border-radius: 12px; padding: 28px; display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; }
+.stage.t-light { background: #DCE3EA; }
+.stage.t-dark { background: #10151B; }
+.cap { font-size: 12px; color: var(--ink-2); margin-top: 8px; max-width: 360px; }
+.stage > figure { margin: 0; }
+
+/* ---------------- Taskbar + tray ---------------- */
+.taskbar { width: 100%; height: 48px; background: var(--taskbar); border-radius: 8px; display: flex; align-items: center;
+  justify-content: flex-end; padding: 0 12px; gap: 2px; color: var(--taskbar-ink); position: relative; }
+.tray-btn { width: 32px; height: 40px; border-radius: 4px; display: grid; place-items: center; }
+.tray-btn.hover { background: var(--subtle-hover); }
+.clock { font-size: 12px; text-align: right; line-height: 1.3; padding: 0 8px; }
+.sys { opacity: .9; }
+.zoomrow { display: flex; gap: 18px; flex-wrap: wrap; }
+.zoom { display: grid; justify-items: center; gap: 6px; font-size: 12px; color: var(--ink-2); }
+.zoom .px { width: 64px; height: 64px; background: var(--taskbar); border-radius: 6px; display: grid; place-items: center; }
+.zoom .px svg { width: 64px; height: 64px; image-rendering: pixelated; }
+
+/* ---------------- Tooltip ---------------- */
+.tooltip { display: inline-block; background: var(--tooltip); color: var(--ink); border: 1px solid var(--flyout-stroke);
+  border-radius: 4px; padding: 5px 8px 6px; font-size: 12px; box-shadow: 0 4px 8px rgba(0,0,0,.14); white-space: nowrap; }
+
+/* ---------------- Flyout ---------------- */
+.flyout { width: 360px; background: var(--flyout); color: var(--ink); border: 1px solid var(--flyout-stroke);
+  border-radius: 8px; box-shadow: var(--shadow); overflow: hidden; }
+.fly-main { padding: 16px 16px 14px; display: grid; grid-template-columns: 96px 1fr; gap: 16px; align-items: center; }
+.glyph { width: 96px; height: 72px; color: var(--glyph); }
+.glyph .port .pad { fill: none; stroke: none; }
+.glyph .port.on { color: var(--glyph-on); }
+.glyph .port.on .pad { fill: var(--accent); fill-opacity: .16; }
+.glyph .flow { color: var(--ok); }
+.glyph .lvl { color: var(--ink); }
+.glyph .lvl.caution { color: var(--caution); }
+.glyph .lvl.critical { color: var(--critical); }
+.glyph .lvl.ok { color: var(--ok); }
+.model { font-size: 12px; color: var(--ink-2); display: flex; gap: 6px; align-items: center; }
+.pct { font: 600 40px/1.05 "Segoe UI Variable Display", "Segoe UI", sans-serif; letter-spacing: -.01em; margin: 2px 0 2px; }
+.pct small { font-size: 20px; font-weight: 600; }
+.status { font-size: 14px; font-weight: 600; display: flex; gap: 6px; align-items: center; }
+.status.big { font-size: 20px; line-height: 1.3; margin: 4px 0 2px; }
+.status.ok { color: var(--ok); } .status.caution { color: var(--caution); } .status.critical { color: var(--critical); }
+.sub { font-size: 12px; color: var(--ink-2); }
+.ico { font-family: "Segoe Fluent Icons", "Segoe MDL2 Assets"; font-size: 14px; line-height: 1; font-style: normal; }
+.flows { margin: 0 16px 12px; background: var(--card); border: 1px solid var(--card-stroke); border-radius: 6px;
+  display: grid; grid-template-columns: 1fr 1fr; }
+.flows > div { padding: 8px 12px; }
+.flows > div + div { border-left: 1px solid var(--divider); }
+.flows .k { font-size: 12px; color: var(--ink-2); }
+.flows .v { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.expander { margin: 0 16px 12px; border: 1px solid var(--card-stroke); background: var(--card); border-radius: 6px; }
+.expander > .head { height: 40px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; font-size: 14px; }
+.expander > .head .ico { font-size: 12px; color: var(--ink-2); }
+.expander dl { margin: 0; padding: 4px 12px 10px; border-top: 1px solid var(--divider); display: grid;
+  grid-template-columns: 1fr auto; column-gap: 12px; row-gap: 3px; font-size: 12px; }
+.expander dt { color: var(--ink-2); }
+.expander dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.expander dl .grp { grid-column: 1 / -1; font-weight: 600; color: var(--ink); margin-top: 8px; }
+.notice { margin: 0 16px 12px; padding: 10px 12px; border-radius: 6px; background: var(--card); border: 1px solid var(--card-stroke); font-size: 12px; color: var(--ink-2); }
+.notice b { color: var(--ink); font-weight: 600; display: block; font-size: 14px; margin-bottom: 2px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 0 12px; border-radius: 4px;
+  font-size: 14px; border: 1px solid var(--card-stroke); background: var(--card); color: var(--ink); margin-top: 10px; }
+.btn.accent { background: var(--accent); color: var(--on-accent); border-color: transparent; }
+.footer { height: 48px; border-top: 1px solid var(--divider); display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 16px; background: rgba(127,127,127,.04); }
+.footer .brand { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--ink-2); }
+.footer .brand img { width: 16px; height: 16px; }
+.iconbtn { width: 32px; height: 32px; border-radius: 4px; display: inline-grid; place-items: center; color: var(--ink); }
+.iconbtn.hover { background: var(--subtle-hover); }
+.focus-ring { outline: 2px solid var(--focus); outline-offset: 1px; }
+
+/* ---------------- Menu ---------------- */
+.menu { width: 248px; background: var(--menu); color: var(--ink); border: 1px solid var(--flyout-stroke); border-radius: 8px; box-shadow: var(--shadow); padding: 4px; font-size: 14px; }
+.menu .item { height: 32px; display: grid; grid-template-columns: 24px 1fr auto; gap: 8px; align-items: center; padding: 0 10px; border-radius: 4px; }
+.menu .item.hover { background: var(--subtle-hover); }
+.menu .item .ico { color: var(--ink); }
+.menu .item .meta { color: var(--ink-2); font-size: 12px; }
+.menu hr { border: 0; border-top: 1px solid var(--divider); margin: 4px 0; }
+.menu .item.title { color: var(--ink-2); font-size: 12px; grid-template-columns: 1fr; height: 28px; }
+.submenu { position: relative; }
+
+/* ---------------- Toast ---------------- */
+.toast { width: 364px; background: var(--flyout); color: var(--ink); border: 1px solid var(--flyout-stroke); border-radius: 8px; box-shadow: var(--shadow); padding: 12px 14px 16px; }
+.toast .app { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--ink-2); margin-bottom: 10px; }
+.toast .app img { width: 16px; height: 16px; }
+.toast .app .x { margin-left: auto; font-family: "Segoe Fluent Icons","Segoe MDL2 Assets"; font-size: 10px; }
+.toast .body { display: grid; grid-template-columns: 48px 1fr; gap: 12px; }
+.toast .body img { width: 48px; height: 48px; }
+.toast h4 { margin: 0 0 2px; font-size: 14px; font-weight: 600; }
+.toast p { margin: 0; font-size: 14px; color: var(--ink-2); }
+
+/* ---------------- Brand sheet ---------------- */
+.brand-sheet { display: grid; grid-template-columns: 360px 1fr; gap: 32px; background: var(--brand-cream); border-radius: 16px; padding: 32px; color: var(--brand-ink); }
+.brand-sheet h3 { margin: 0 0 8px; font: 600 28px/1 Fredoka, sans-serif; }
+.swatches { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+.sw { width: 96px; font-size: 12px; }
+.sw i { display: block; height: 56px; border-radius: 10px; margin-bottom: 6px; border: 1px solid rgba(58,42,34,.15); }
+.lockup { display: flex; align-items: center; gap: 14px; margin-top: 24px; }
+.lockup span { font: 600 56px/1 Fredoka, sans-serif; color: var(--brand-ink); letter-spacing: -.01em; }
+.sizes { display: flex; gap: 16px; align-items: end; margin-top: 18px; }
+table.rules { border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+table.rules td, table.rules th { text-align: left; padding: 6px 12px 6px 0; border-bottom: 1px solid rgba(58,42,34,.15); vertical-align: top; }
+</style>
+</head>
+<body>
+<!--
+THESIS: upsy is a UPS gauge that belongs to Windows: the taskbar number answers "am I OK?", the flyout explains it; it refuses a custom dashboard window.
+OWN-WORLD: native Windows 11 Fluent surfaces (Mica-grey flyout, 8px radius, Segoe UI Variable, Fluent icons, semantic ok/caution/critical); brand only in the mid-century mascot, app icon and wordmark (mustard, teal, rust, cream, ink).
+STORY: glance at the number; hover for the sentence; click for the station glyph, flows and details; get a toast when mains drops or charge runs low.
+FIRST VIEWPORT: flyout = 96px station glyph left, 40px percentage + one-line state right, then an in/out flow strip, a Details expander, footer with brand and More.
+FORM: brief-pinned (native Windows 11), no concept roll.
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+-->
+<div class="page">
+  <header class="doc">
+    <img src="../assets/brand/upsy-icon.svg" alt="">
+    <div>
+      <h1>upsy design</h1>
+      <p>Mock-up of every surface of the upsy tray app, at real Windows 11 size, light theme left and dark theme right.
+        All numbers are synthetic but shaped on real EB3A captures. This file is the reference the WPF build follows
+        (change <code>add-eb3a-tray-monitor</code>).</p>
+    </div>
+  </header>
+  <div id="boards"></div>
+</div>
+
+<script>
+const BOARDS = document.getElementById('boards');
+const STATION = (s) => {
+  // s: { pct, lvl: ''|'ok'|'caution'|'critical', acOut, dcOut, acIn, dcIn, off }
+  const w = (22 * Math.max(0, Math.min(100, s.pct ?? 0)) / 100).toFixed(1);
+  const on = (b) => b ? 'on' : '';
+  return `<svg class="glyph" viewBox="0 0 96 72" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M18 16 V10 Q18 5 23 5 H73 Q78 5 78 10 V16"/>
+    <rect x="8" y="16" width="80" height="50" rx="9"/>
+    <rect x="15" y="23" width="30" height="18" rx="3"/>
+    ${s.off ? `<path d="M22 32 H38" stroke-dasharray="2 3"/>` : `<rect class="lvl ${s.lvl||''}" x="19" y="28" width="${w}" height="8" rx="1.5" fill="currentColor" stroke="none"/>`}
+    <g class="port ${on(s.acOut)}"><rect class="pad" x="56" y="21" width="24" height="24" rx="5"/><circle cx="68" cy="33" r="7.5"/><circle cx="65" cy="33" r="1.4" fill="currentColor" stroke="none"/><circle cx="71" cy="33" r="1.4" fill="currentColor" stroke="none"/></g>
+    <g class="port ${on(s.dcOut)}"><rect class="pad" x="12" y="48" width="70" height="10" rx="3"/><rect x="16" y="51" width="7" height="4" rx="1"/><rect x="27" y="51" width="7" height="4" rx="1"/><rect x="38" y="51.5" width="7" height="3" rx="1.5"/><circle cx="68" cy="53" r="3"/></g>
+    <path class="${s.acIn ? 'flow' : ''}" d="M8 40 H2 M8 46 H2"/>
+    <path class="${s.dcIn ? 'flow' : ''}" d="M88 40 H94 M88 46 H94"/>
+  </svg>`;
+};
+
+// 16x16 tray icon. kind: num | full | off ; bar: ok | caution | critical | none
+const TRAY = (o) => {
+  const ink = 'var(--taskbar-ink)';
+  if (o.kind === 'off') return `<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><rect x="1.5" y="4.5" width="11" height="7" rx="1.5" fill="none" stroke="${ink}" stroke-opacity=".55"/><rect x="13" y="6.5" width="1.5" height="3" fill="${ink}" fill-opacity=".55"/><path d="M2 14 L13 2" stroke="${ink}" stroke-opacity=".75" stroke-width="1.2"/></svg>`;
+  if (o.kind === 'paused') return `<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><rect x="1.5" y="4.5" width="11" height="7" rx="1.5" fill="none" stroke="${ink}" stroke-opacity=".55"/><rect x="13" y="6.5" width="1.5" height="3" fill="${ink}" fill-opacity=".55"/><rect x="5" y="6.5" width="1.6" height="3" fill="${ink}"/><rect x="7.6" y="6.5" width="1.6" height="3" fill="${ink}"/></svg>`;
+  if (o.kind === 'full') return `<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><rect x="1.5" y="4.5" width="11" height="7" rx="1.5" fill="none" stroke="${ink}"/><rect x="3" y="6" width="8" height="4" rx=".5" fill="${o.bar==='ok'?'var(--ok)':ink}"/><rect x="13" y="6.5" width="1.5" height="3" fill="${ink}"/></svg>`;
+  const col = o.bar === 'caution' ? 'var(--caution)' : o.bar === 'critical' ? 'var(--critical)' : ink;
+  const bar = o.bar === 'ok' ? `<rect x="1" y="14" width="14" height="2" rx="1" fill="var(--ok)"/>`
+            : o.bar === 'caution' || o.bar === 'critical' ? `<rect x="1" y="14" width="14" height="2" rx="1" fill="${col}"/>` : '';
+  return `<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><text x="8" y="12" text-anchor="middle" font-family="Segoe UI Variable Display, Segoe UI, sans-serif" font-weight="700" font-size="11.5" letter-spacing="-.4" fill="${col}">${o.n}</text>${bar}</svg>`;
+};
+
+const board = (title, desc, render) => {
+  const sec = document.createElement('section');
+  sec.className = 'board';
+  sec.innerHTML = `<h2>${title}</h2><p>${desc}</p><div class="pair"><div class="stage t-light">${render('light')}</div><div class="stage t-dark">${render('dark')}</div></div>`;
+  BOARDS.appendChild(sec);
+};
+
+/* 1. Tray -------------------------------------------------------------------------------- */
+const TRAY_STATES = [
+  { n: '58', kind: 'num', label: 'On battery 58%' },
+  { n: '54', kind: 'num', bar: 'ok', label: 'Charging 54%' },
+  { kind: 'full', label: 'Full, on mains' },
+  { n: '18', kind: 'num', bar: 'caution', label: 'Low 18%' },
+  { n: '7', kind: 'num', bar: 'critical', label: 'Critical 7%' },
+  { kind: 'off', label: 'No connection' },
+  { kind: 'paused', label: 'Paused' },
+];
+board('Tray icon', 'The number is the battery percentage, drawn at the small-icon size and recoloured with the taskbar theme. A bar under the number adds state: green while charging, amber at or below the alert threshold, red at 10% or less; colour is never the only cue, the number changes colour too and the tooltip says it in words. 100% becomes a full battery, no data becomes a crossed-out outline, and a user pause shows pause bars so it is never mistaken for a lost link.', (t) => `
+  <div style="width:100%">
+    <div class="taskbar"><span class="sys">${'<span class="tray-btn"><i class="ico">&#xE701;</i></span><span class="tray-btn"><i class="ico">&#xE767;</i></span>'}</span>
+      <span class="tray-btn hover">${TRAY(TRAY_STATES[0])}</span><span class="clock">14:32<br>12.10.2026</span></div>
+    <div class="zoomrow" style="margin-top:20px">${TRAY_STATES.map(s => `<div class="zoom"><div class="px">${TRAY(s).replace('width="16" height="16"', '')}</div>${s.label}</div>`).join('')}</div>
+    <div class="cap">Shown at 4x for review; the real icon is 16 px at 100% scaling and 32 px at 200%.</div>
+  </div>`);
+
+/* 2. Tooltip ----------------------------------------------------------------------------- */
+board('Tooltip', 'One line, under the 127-character limit: model, percentage, then what matters now. Hovering the icon shows it after the usual Windows delay.', () => `
+  <figure><span class="tooltip">EB3A · 58% · 128 W out · about 1 h left</span><div class="cap">On battery</div></figure>
+  <figure><span class="tooltip">EB3A · 54% · charging +264 W</span><div class="cap">Charging on mains</div></figure>
+  <figure><span class="tooltip">EB3A · 100% · on mains</span><div class="cap">Full on mains</div></figure>
+  <figure><span class="tooltip">upsy · Bluetooth is off</span><div class="cap">No data (reason in words)</div></figure>`);
+
+/* 3. Flyout ------------------------------------------------------------------------------ */
+const FOOT = (paused) => `<div class="footer"><span class="brand"><img src="../assets/brand/upsy-icon.svg" alt="">upsy</span>
+  <span><span class="iconbtn" title="${paused ? 'Resume connection' : 'Pause connection'}"><i class="ico">${paused ? '&#xE768;' : '&#xE769;'}</i></span><span class="iconbtn" title="More"><i class="ico">&#xE712;</i></span></span></div>`;
+const DETAILS = (open) => `<div class="expander"><div class="head"><span>Details</span><i class="ico">${open ? '&#xE70E;' : '&#xE70D;'}</i></div>${open ? `<dl>
+  <dt class="grp">Power</dt>
+  <dt>AC input</dt><dd>390 W · 228.4 V</dd>
+  <dt>DC input</dt><dd>0 W · 0.00 V</dd>
+  <dt>AC output</dt><dd>On · 126 W</dd>
+  <dt>DC output</dt><dd>Off · 0 W</dd>
+  <dt>Battery net</dt><dd>+264 W</dd>
+  <dt>Load present</dt><dd>Yes</dd>
+  <dt class="grp">Station</dt>
+  <dt>Charging mode</dt><dd>Standard</dd>
+  <dt>ECO mode</dt><dd>On · off after 1 h at ≤10 W</dd>
+  <dt>Power lifting</dt><dd>Off</dd>
+  <dt>Light</dt><dd>Off</dd>
+  <dt class="grp">Device</dt>
+  <dt>Model</dt><dd>EB3A</dd>
+  <dt>Serial</dt><dd>2240000000001</dd>
+  <dt>Firmware</dt><dd>ARM 2063.02 · DSP 2052.07</dd>
+  <dt>Updated</dt><dd>2 s ago</dd>
+  </dl>` : ''}</div>`;
+const FLY = (o) => `<div class="flyout" role="dialog" aria-label="upsy">
+  <div class="fly-main">${STATION(o.st)}<div>
+    <div class="model">${o.model}</div>
+    ${o.pct != null ? `<div class="pct">${o.pct}<small>%</small></div>` : ''}
+    <div class="status ${o.cls || ''} ${o.pct == null ? 'big' : ''}">${o.icon ? `<i class="ico">${o.icon}</i>` : ''}${o.status}</div>
+    ${o.sub ? `<div class="sub">${o.sub}</div>` : ''}
+  </div></div>
+  ${o.flows ? `<div class="flows"><div><div class="k">In</div><div class="v">${o.flows[0]}</div></div><div><div class="k">Out</div><div class="v">${o.flows[1]}</div></div></div>` : ''}
+  ${o.notice || ''}
+  ${o.details !== undefined ? DETAILS(o.details) : ''}
+  ${FOOT(o.paused)}</div>`;
+
+board('Flyout: on battery', 'Left-click the icon. The station glyph is the recognised model: its screen fills to the charge level, the outputs that are switched on are drawn solid, and an input that is feeding power turns green. Runtime is always "about" and rounded (5 min under an hour, 10 min above), never a precise clock.', () => `
+  <figure>${FLY({ model: 'EB3A · on battery', pct: 58, status: 'About 1 h left', icon: '&#xE83F;', sub: 'At the current 128 W load',
+    st: { pct: 58, acOut: 1 }, flows: ['0 W', '128 W'], details: false })}<div class="cap">Default view. Details collapsed.</div></figure>
+  <figure>${FLY({ model: 'EB3A · on battery', pct: 18, status: 'Low · about 20 min left', icon: '&#xE7BA;', cls: 'caution', sub: 'Save your work. Alert threshold is 20%.',
+    st: { pct: 18, acOut: 1, lvl: 'caution' }, flows: ['0 W', '131 W'], details: false })}<div class="cap">At or below the threshold: amber, with a plain instruction.</div></figure>`);
+
+board('Flyout: on mains', 'Plugged in, the main line says what the battery is doing and the flow strip shows mains passing through to the load.', () => `
+  <figure>${FLY({ model: 'EB3A · on mains', pct: 54, status: 'Charging · +264 W', icon: '&#xE83E;', cls: 'ok', sub: 'Mains 228 V',
+    st: { pct: 54, acOut: 1, acIn: 1, lvl: 'ok' }, flows: ['390 W', '126 W'], details: true })}<div class="cap">Charging, Details expanded: every value the station reports, grouped.</div></figure>
+  <figure>${FLY({ model: 'EB3A · on mains', pct: 100, status: 'Full', icon: '&#xE83F;', sub: 'Mains 228 V · passing 126 W to the load',
+    st: { pct: 100, acOut: 1, acIn: 1 }, flows: ['126 W', '126 W'], details: false })}<div class="cap">Full on mains (UPS bypass).</div></figure>`);
+
+board('Flyout: no data', 'Without fresh data the flyout never shows stale numbers. It names the reason and the one thing the user can do about it.', () => `
+  <figure>${FLY({ model: 'EB3A · last seen 14:05', pct: null, status: 'Bluetooth is off', icon: '&#xE702;', st: { off: 1 },
+    notice: `<div class="notice"><b>Turn on Bluetooth to see the station</b>upsy reconnects by itself as soon as it is on.<br><span class="btn">Bluetooth settings</span></div>` })}<div class="cap">Radio off.</div></figure>
+  <figure>${FLY({ model: 'EB3A · last seen 14:05', pct: null, status: 'Looking for the station…', icon: '&#xE895;', st: { off: 1 },
+    notice: `<div class="notice"><b>Not in range or busy</b>Make sure the EB3A is on and the Bluetti app is closed. Retrying every 30 s.</div>` })}<div class="cap">Searching / reconnecting.</div></figure>
+  <figure>${FLY({ model: 'EB3A', pct: null, status: 'Paused', icon: '&#xE769;', st: { off: 1 }, paused: true,
+    notice: `<div class="notice"><b>Connection paused</b>The Bluetti phone app can use the station now. No alerts while paused. Resumes by itself at 15:02.<br><span class="btn accent focus-ring">Resume</span></div>` })}<div class="cap">Paused by the user. Keyboard focus shown on Resume.</div></figure>
+  <figure>${FLY({ model: 'First start', pct: null, status: 'Looking for an EB3A…', icon: '&#xE895;', st: { off: 1 },
+    notice: `<div class="notice"><b>Turn on the station near this PC</b>No pairing needed. upsy finds it by name and remembers it.</div>` })}<div class="cap">First run, nothing remembered yet.</div></figure>`);
+
+/* 4. Menu -------------------------------------------------------------------------------- */
+board('Context menu', 'Right-click the icon, or More in the flyout footer. Native Windows 11 menu metrics; the bold default item opens the flyout (also Enter on the focused icon, after Win+B). The threshold opens a submenu of fixed steps.', () => `
+  <figure style="display:flex; gap:8px; align-items:flex-start"><div class="menu">
+    <div class="item title">EB3A · 58% · on battery</div>
+    <div class="item"><span></span><span style="font-weight:600">Open upsy</span><span></span></div>
+    <div class="item"><i class="ico">&#xE769;</i><span>Pause for 30 minutes</span><span></span></div>
+    <hr>
+    <div class="item"><i class="ico">&#xE73E;</i><span>Start with Windows</span><span></span></div>
+    <div class="item hover"><i class="ico">&#xE7BA;</i><span>Low battery alert</span><span class="meta">20% &nbsp;<i class="ico" style="font-size:10px">&#xE76C;</i></span></div>
+    <hr>
+    <div class="item"><i class="ico">&#xE711;</i><span>Exit</span><span></span></div>
+  </div>
+  <div class="menu" style="width:120px; margin-top:76px">
+    <div class="item"><span></span><span>10%</span><span></span></div>
+    <div class="item"><span></span><span>15%</span><span></span></div>
+    <div class="item hover"><i class="ico">&#xE73E;</i><span>20%</span><span></span></div>
+    <div class="item"><span></span><span>25%</span><span></span></div>
+    <div class="item"><span></span><span>30%</span><span></span></div>
+  </div></figure>`);
+
+/* 5. Toasts ------------------------------------------------------------------------------ */
+const TOAST = (h, p, mascot) => `<div class="toast"><div class="app"><img src="../assets/brand/upsy-icon.svg" alt="">upsy<span class="x">&#xE8BB;</span></div>
+  <div class="body"><img src="../assets/brand/${mascot}" alt=""><div><h4>${h}</h4><p>${p}</p></div></div></div>`;
+board('Notifications', 'Windows toasts from the tray icon. Title says what happened, body says what it means now. Each fires once per event (debounced 5 s for mains). Low fires at the user threshold, critical once more at 10%.', () => `
+  <figure>${TOAST('Mains power lost', 'EB3A is on battery at 92%, about 1 h 40 min at 128 W.', 'upsy-icon.svg')}</figure>
+  <figure>${TOAST('Battery low: 20%', 'About 20 min left at 131 W. Save your work.', 'upsy-icon.svg')}</figure>
+  <figure>${TOAST('Battery critical: 10%', 'About 10 min left at 131 W. Shut down or hibernate now.', 'upsy-icon.svg')}</figure>
+  <figure>${TOAST('Mains power is back', 'EB3A is charging at 61%.', 'upsy-icon.svg')}</figure>`);
+
+/* 6. Brand ------------------------------------------------------------------------------- */
+const brand = document.createElement('section');
+brand.className = 'board';
+brand.innerHTML = `<h2>Brand</h2><p>Upsy, as in "upsy-daisy": what you say when you catch someone who trips. The mascot catches your PC when mains drops. Flat, thick ink outline, mid-century palette. Brand stays outside the native chrome: app icon, toasts, flyout footer, README.</p>
+<div class="brand-sheet">
+  <div><img src="../assets/brand/upsy-mascot.svg" width="320" alt="Upsy mascot"></div>
+  <div>
+    <h3>Upsy</h3>
+    <div>A battery with a daisy on its terminal. The teal belly is its charge; the bolt says it is a power thing without a word.</div>
+    <div class="lockup"><img src="../assets/brand/upsy-icon.svg" width="72" alt=""><span>upsy</span></div>
+    <div class="sizes"><img src="../assets/brand/upsy-icon.svg" width="64" alt=""><img src="../assets/brand/upsy-icon.svg" width="48" alt=""><img src="../assets/brand/upsy-icon.svg" width="32" alt=""><img src="../assets/brand/upsy-icon.svg" width="24" alt=""><img src="../assets/brand/upsy-icon.svg" width="16" alt=""></div>
+    <div class="swatches">
+      <div class="sw"><i style="background:var(--brand-mustard)"></i>Mustard #E3A72F</div>
+      <div class="sw"><i style="background:var(--brand-teal)"></i>Teal #2F7F7A</div>
+      <div class="sw"><i style="background:var(--brand-rust)"></i>Rust #D2602F</div>
+      <div class="sw"><i style="background:var(--brand-olive)"></i>Olive #7A8F35</div>
+      <div class="sw"><i style="background:var(--brand-cream)"></i>Cream #F6ECD6</div>
+      <div class="sw"><i style="background:var(--brand-ink)"></i>Ink #3A2A22</div>
+    </div>
+    <table class="rules"><tr><th>Use</th><th>Where</th></tr>
+      <tr><td>App icon</td><td>.exe, toasts, flyout footer (16 px)</td></tr>
+      <tr><td>Mascot</td><td>README, About; never inside status UI</td></tr>
+      <tr><td>Wordmark</td><td>Fredoka 600, lower-case "upsy"</td></tr></table>
+  </div>
+</div>`;
+BOARDS.appendChild(brand);
+</script>
+</body>
+</html>
