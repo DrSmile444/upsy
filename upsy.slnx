@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Upsy.Core/Upsy.Core.csproj" />
+    <Project Path="src/Upsy/Upsy.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Upsy.Core.Tests/Upsy.Core.Tests.csproj" />
+  </Folder>
+</Solution>
