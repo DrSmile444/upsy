@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>Upsy</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <StartupObject>Upsy.Program</StartupObject>
+    <!-- WPF owns the window and reads DPI awareness from app.manifest; the WinForms analyzer assumes a WinForms host. -->
+    <NoWarn>$(NoWarn);WFO0003</NoWarn>
+    <AssemblyName>upsy</AssemblyName>
+    <ApplicationIcon>Assets\upsy.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyTitle>upsy</AssemblyTitle>
+    <Description>upsy - Bluetti EB3A UPS monitor</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- WPF and WinForms share type names; keep implicit usings to the BCL. -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assets\upsy-256.png" />
+    <EmbeddedResource Include="Assets\upsy.ico" LogicalName="upsy.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Upsy.Core\Upsy.Core.csproj" />
+  </ItemGroup>
+</Project>
