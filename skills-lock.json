@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "ux-crux-review": {
+      "source": "DrSmile444/ux-crux",
+      "sourceType": "github",
+      "skillPath": "skills/ux-crux-review/SKILL.md",
+      "computedHash": "5ffd637b348b13ead1691e6bd6326904b5f8f7a964c8379c034897b8129f3fef"
+    }
+  }
+}
