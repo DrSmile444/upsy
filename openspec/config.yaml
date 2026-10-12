@@ -1,0 +1,55 @@
+schema: spec-driven
+
+context: |
+  Product: `upsy`, a Windows tray app that reads a Bluetti EB3A power station over Bluetooth LE
+  (read-only Modbus) and shows battery, runtime, charging and mains state, with alerts.
+  Product truth lives in PRODUCT.md; visual decisions in DESIGN.md; mock-ups in design/*.html.
+
+  Stack:
+  - .NET 10 LTS (SDK pinned in global.json), C# latest, TFM net10.0-windows10.0.19041.0.
+  - WinRT Windows.Devices.Bluetooth directly (no BLE wrapper library).
+  - WinForms NotifyIcon for the tray, WPF for the flyout; no third-party UI, SVG or MVVM framework.
+  - Tests: xUnit v3 with plain Assert (no FluentAssertions); no hardware in unit tests.
+  - Build settings are shared in Directory.Build.props, package versions in Directory.Packages.props
+    (central package management); style in .editorconfig.
+
+  Conventions:
+  - Layers: Upsy.Core (protocol, decoding, power-state logic, alerts; pure, no Windows UI refs, fully
+    unit-tested) -> Upsy (BLE transport, tray, WPF flyout, settings, composition root).
+  - Nullable enabled, warnings as errors, AnalysisLevel latest-recommended, EnforceCodeStyleInBuild.
+  - Pure logic takes plain values and an injected TimeProvider; no static clocks, no DateTime.Now.
+  - async all the way; CancellationToken on every long-running loop; ConfigureAwait(false) in Core.
+  - Records for immutable data (Telemetry, StationSettings); sealed classes by default.
+  - Register addresses, scales and thresholds are named constants next to the code that uses them.
+  - Never write station registers (only Modbus function 0x03).
+  - Commits follow Conventional Commits.
+
+  Quality gate (must pass before a task is marked done):
+  - dotnet build -c Release (0 warnings), dotnet test, dotnet format --verify-no-changes.
+
+  Design:
+  - UI is mocked first in design/upsy.design.html (light + dark, real sizes, native Windows 11
+    conventions) and reviewed with the impeccable skill (detector + critique) and /ux-crux-review
+    before implementation. The WPF build follows the accepted mock-up.
+
+rules:
+  proposal:
+    - State what is out of scope; keep phase-2 ideas in a "Later" list rather than dropping them.
+  design:
+    - Record rejected alternatives with one line on why.
+    - Any user-visible surface change links to the frame in design/upsy.design.html that shows it.
+  specs:
+    - Scenarios use concrete numbers taken from real captures where possible.
+  tasks:
+    - Every task ends with a concrete "verify" step; hardware checks are separate tasks from unit-tested ones.
+    - Keep tasks small enough to finish and verify in one sitting.
+
+operations:
+  apply:
+    guidance:
+      - Run the quality gate (build with 0 warnings, test, format check) after each task group.
+      - Hardware-dependent verification runs against the real EB3A only when it is in range; otherwise mark it pending in the summary, never as done.
+      - Keep the UI faithful to the accepted design mock-up; update the mock-up first if the UI must change.
+  archive:
+    guidance:
+      - Archive only after the owner has run the end-to-end checks (mains unplug/replug) themselves.
