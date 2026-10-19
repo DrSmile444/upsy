@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 740" fill="none" stroke="#171717" stroke-linecap="round" stroke-linejoin="round">
+  <title>BLUETTI EB3A — simplified outline</title>
+  <!-- Outer silhouette -->
+  <path d="M111 139H61Q47 139 40 155L16 205Q8 220 8 247V686Q8 718 40 718H759Q790 718 790 685V247Q790 220 781 205L758 154Q750 139 735 139H686" stroke-width="11"/>
+  <!-- Carry handle -->
+  <path d="M112 164V62Q112 10 166 10H632Q687 10 687 62V164H643V76Q643 54 618 54H180Q156 54 156 77V164Z" stroke-width="10"/>
+  <!-- Top shoulder/body edge -->
+  <path d="M157 146H643M23 206H777" stroke-width="5" opacity=".65"/>
+  <!-- Front panel bezel -->
+  <rect x="47" y="245" width="706" height="439" rx="35" stroke-width="10"/>
+  <rect x="65" y="264" width="670" height="402" rx="26" stroke-width="4"/>
+  <!-- Screen -->
+  <rect x="265" y="272" width="270" height="148" rx="19" stroke-width="7"/>
+  <path d="M282 395H517" stroke-width="2" opacity=".5"/>
+  <path d="M365 347A39 39 0 0 1 443 347" stroke-width="9" stroke-dasharray="9 6"/>
+  <text x="404" y="355" fill="#171717" font-size="38" font-family="Arial, sans-serif" text-anchor="middle" stroke="none" font-weight="600">99</text>
+  <text x="439" y="353" fill="#171717" font-size="14" font-family="Arial, sans-serif" stroke="none">%</text>
+  <text x="308" y="322" fill="#171717" font-size="11" font-family="Arial, sans-serif" stroke="none">INPUT</text>
+  <text x="466" y="322" fill="#171717" font-size="11" font-family="Arial, sans-serif" stroke="none">OUTPUT</text>
+  <path d="M299 353h37m-37 7h37m132-8h35m-35 8h35" stroke-width="3"/>
+  <!-- Left DC output area -->
+  <rect x="91" y="274" width="155" height="207" rx="15" stroke-width="3"/>
+  <text x="168" y="285" fill="#171717" font-size="11" font-family="Arial, sans-serif" stroke="none" text-anchor="middle">DC OUTPUT</text>
+  <circle cx="169" cy="356" r="55" stroke-width="6"/>
+  <circle cx="169" cy="356" r="35" stroke-width="3"/>
+  <path d="M151 302v-20h36v20" stroke-width="5"/>
+  <circle cx="133" cy="450" r="11" stroke-width="4"/>
+  <circle cx="208" cy="450" r="11" stroke-width="4"/>
+  <rect x="147" y="470" width="47" height="20" rx="10" stroke-width="3"/>
+  <!-- Right flashlight -->
+  <rect x="562" y="274" width="145" height="155" rx="14" stroke-width="3"/>
+  <text x="634" y="285" fill="#171717" font-size="11" font-family="Arial, sans-serif" stroke="none" text-anchor="middle">LIGHT</text>
+  <circle cx="637" cy="337" r="43" stroke-width="6"/>
+  <circle cx="637" cy="337" r="26" stroke-width="3"/>
+  <circle cx="637" cy="337" r="10" stroke-width="3"/>
+  <rect x="613" y="398" width="48" height="18" rx="9" stroke-width="3"/>
+  <!-- USB ports -->
+  <rect x="290" y="436" width="39" height="15" rx="2" stroke-width="3"/>
+  <rect x="381" y="436" width="39" height="15" rx="2" stroke-width="3"/>
+  <rect x="474" y="438" width="28" height="11" rx="5" stroke-width="3"/>
+  <text x="398" y="471" fill="#171717" font-size="11" font-family="Arial, sans-serif" stroke="none" text-anchor="middle">USB</text>
+  <!-- Brand -->
+  <path d="m559 444 23 0 -13 22z m6 6 9 0 -5 9z" stroke-width="3"/>
+  <text x="593" y="466" fill="#171717" font-size="24" font-family="Arial, sans-serif" letter-spacing="2" font-weight="bold" stroke="none">BLUETTI</text>
+  <text x="596" y="486" fill="#171717" font-size="12" font-family="Arial, sans-serif" stroke="none">EB3A</text>
+  <!-- Lower input section -->
+  <rect x="98" y="500" width="299" height="163" rx="16" stroke-width="4"/>
+  <circle cx="138" cy="581" r="20" stroke-width="4"/>
+  <circle cx="138" cy="581" r="8" stroke-width="3"/>
+  <rect x="186" y="539" width="99" height="88" rx="12" stroke-width="4"/>
+  <path d="M221 627v9h30v-9" stroke-width="3"/>
+  <circle cx="337" cy="586" r="38" stroke-width="5"/>
+  <circle cx="337" cy="586" r="19" stroke-width="4"/>
+  <!-- AC output section -->
+  <rect x="434" y="500" width="270" height="163" rx="16" stroke-width="4"/>
+  <rect x="506" y="511" width="153" height="143" rx="10" stroke-width="3"/>
+  <circle cx="584" cy="584" r="64" stroke-width="7"/>
+  <circle cx="549" cy="577" r="10" fill="#171717" stroke="none"/>
+  <circle cx="619" cy="577" r="10" fill="#171717" stroke="none"/>
+  <path d="M576 575h16m-8-8v16" stroke-width="7"/>
+  <path d="M570 628h28v14h-28z" stroke-width="3"/>
+  <rect x="453" y="559" width="23" height="49" rx="11" stroke-width="4"/>
+  <!-- A few restrained labels -->
+  <text x="239" y="521" fill="#171717" font-size="10" font-family="Arial, sans-serif" stroke="none" text-anchor="middle">INPUT</text>
+  <text x="582" y="496" fill="#171717" font-size="10" font-family="Arial, sans-serif" stroke="none" text-anchor="middle">AC OUTPUT</text>
+</svg>

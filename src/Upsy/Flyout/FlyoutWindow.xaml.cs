@@ -14,13 +14,20 @@ namespace Upsy.Flyout;
 /// <summary>The left-click flyout. Layout and tokens follow DESIGN.md / design/upsy.design.html.</summary>
 public partial class FlyoutWindow : Window
 {
-    private const double FullFillWidth = 22;
     private bool? _themeIsLight;
+    private System.Drawing.Point? _anchor;
 
     public FlyoutWindow()
     {
         InitializeComponent();
         Deactivated += (_, _) => Hide();
+        SizeChanged += (_, _) =>
+        {
+            if (IsVisible)
+            {
+                Reposition();
+            }
+        };
         PreviewKeyDown += (_, e) =>
         {
             if (e.Key == Key.Escape)
@@ -31,6 +38,9 @@ public partial class FlyoutWindow : Window
     }
 
     public event EventHandler? PauseRequested;
+
+    /// <summary>Where the "More" menu opens from.</summary>
+    public UIElement MoreAnchor => MoreButton;
 
     public event EventHandler? ResumeRequested;
 
@@ -49,18 +59,7 @@ public partial class FlyoutWindow : Window
         }
 
         _themeIsLight = light;
-        var t = light ? Palette.Light : Palette.Dark;
-        Resources["Flyout"] = t.Flyout;
-        Resources["FlyoutStroke"] = t.FlyoutStroke;
-        Resources["Card"] = t.Card;
-        Resources["CardStroke"] = t.CardStroke;
-        Resources["Ink"] = t.Ink;
-        Resources["Ink2"] = t.Ink2;
-        Resources["Divider"] = t.Divider;
-        Resources["SubtleHover"] = t.SubtleHover;
-        Resources["SubtlePressed"] = t.SubtlePressed;
-        Resources["Focus"] = t.Ink;
-        Resources["FooterTint"] = t.FooterTint;
+        (light ? Palette.Light : Palette.Dark).Apply(Resources);
     }
 
     public void Render(StatusView v, MonitorSnapshot s)
@@ -116,11 +115,29 @@ public partial class FlyoutWindow : Window
         RenderGlyph(s, v, t);
     }
 
-    /// <summary>Places the window above the taskbar, horizontally near <paramref name="anchor"/> (screen pixels).</summary>
+    /// <summary>Shows the window above the taskbar, horizontally near <paramref name="anchor"/> (screen pixels).</summary>
     public void ShowNear(System.Drawing.Point anchor)
     {
+        _anchor = anchor;
         Show();
         UpdateLayout();
+        Reposition();
+        Activate();
+        // Focus the window, not a control: the focus ring appears only once the user presses Tab, as in native flyouts.
+        Keyboard.Focus(this);
+    }
+
+    /// <summary>
+    /// Keeps the flyout glued to the taskbar edge. Runs on every size change, so expanding Details grows the
+    /// window away from the taskbar instead of under it, and collapsing brings it back down.
+    /// </summary>
+    private void Reposition()
+    {
+        if (_anchor is not { } anchor)
+        {
+            return;
+        }
+
         var source = PresentationSource.FromVisual(this);
         var toDip = source?.CompositionTarget?.TransformFromDevice ?? Matrix.Identity;
         var screen = System.Windows.Forms.Screen.FromPoint(anchor);
@@ -128,6 +145,7 @@ public partial class FlyoutWindow : Window
         var bounds = screen.Bounds;
         var a = toDip.Transform(new Point(anchor.X, anchor.Y));
         var wa = new Rect(toDip.Transform(new Point(work.Left, work.Top)), toDip.Transform(new Point(work.Right, work.Bottom)));
+        MaxHeight = wa.Height;
         var w = ActualWidth;
         var h = ActualHeight;
         const double gap = -4; // the window carries a 16 px shadow margin
@@ -157,8 +175,6 @@ public partial class FlyoutWindow : Window
 
         Left = Math.Clamp(left, wa.Left, Math.Max(wa.Left, wa.Right - w));
         Top = Math.Clamp(top, wa.Top, Math.Max(wa.Top, wa.Bottom - h));
-        Activate();
-        DetailsToggle.Focus();
     }
 
     private static string StatusGlyph(StatusView v, MonitorSnapshot s) => s.Status switch
@@ -176,25 +192,29 @@ public partial class FlyoutWindow : Window
 
     private void RenderGlyph(MonitorSnapshot s, StatusView v, Palette t)
     {
-        foreach (var shape in Glyph.Children.OfType<Shape>())
+        foreach (var shape in Shapes(Glyph))
         {
             shape.Stroke = t.Glyph;
-            shape.Fill = null;
+            shape.Fill = Equals(shape.Tag, "dot") ? t.Glyph : null;
+            shape.StrokeLineJoin = PenLineJoin.Round;
+            shape.StrokeStartLineCap = shape.StrokeEndLineCap = PenLineCap.Round;
         }
 
         GAcPad.Stroke = GDcPad.Stroke = null;
+        GGaugeTrack.Stroke = t.Glyph;
+        GGaugeTrack.Opacity = 0.35;
         var tel = s.Telemetry;
-        var hasData = s.HasData && tel is not null;
-        GNoData.Visibility = hasData ? Visibility.Collapsed : Visibility.Visible;
-        GFill.Visibility = hasData ? Visibility.Visible : Visibility.Collapsed;
-        if (!hasData)
+        if (!s.HasData || tel is null)
         {
-            GAcHole1.Fill = GAcHole2.Fill = t.Glyph;
+            GGaugeValue.Visibility = Visibility.Collapsed;
+            GGaugeTrack.StrokeDashArray = [0.6, 1.2];
             return;
         }
 
-        GFill.Width = Math.Max(1, FullFillWidth * tel!.BatteryPercent / 100.0);
-        GFill.Fill = v.Tone switch
+        GGaugeTrack.StrokeDashArray = null;
+        GGaugeValue.Visibility = tel.BatteryPercent > 0 ? Visibility.Visible : Visibility.Collapsed;
+        GGaugeValue.Data = GaugeArc(tel.BatteryPercent);
+        GGaugeValue.Stroke = v.Tone switch
         {
             Tone.Ok => t.Ok,
             Tone.Caution => t.Caution,
@@ -202,27 +222,60 @@ public partial class FlyoutWindow : Window
             _ => t.Ink,
         };
 
-        var acOn = tel.AcOutputOn;
-        foreach (var part in new Shape[] { GAcSocket })
+        Paint(GAcOut, tel.AcOutputOn ? t.GlyphOn : t.Glyph);
+        GAcPad.Fill = tel.AcOutputOn ? t.AccentTint : null;
+        Paint(GDcOut, tel.DcOutputOn ? t.GlyphOn : t.Glyph);
+        GDcPad.Fill = tel.DcOutputOn ? t.AccentTint : null;
+        Paint(GAcIn, tel.AcInputW > 0 && tel.AcInputVolts > 100 ? t.Ok : t.Glyph);
+        Paint(GDcIn, tel.DcInputW > 0 ? t.Ok : t.Glyph);
+        Paint(GLight, s.Settings?.Led is LedMode.Low or LedMode.High or LedMode.Sos ? t.GlyphOn : t.Glyph);
+
+        AutomationProperties.SetName(GlyphBox, string.Create(CultureInfo.InvariantCulture,
+            $"{s.Identity?.Model ?? "Station"}: {tel.BatteryPercent}%, AC output {(tel.AcOutputOn ? "on" : "off")}, DC output {(tel.DcOutputOn ? "on" : "off")}"));
+    }
+
+    /// <summary>The station screen's half ring, filled from the left to <paramref name="percent"/>.</summary>
+    private static PathGeometry GaugeArc(int percent)
+    {
+        const double cx = 400, cy = 392, r = 72;
+        var angle = Math.PI * (1 - (Math.Clamp(percent, 0, 100) / 100.0));
+        var start = new Point(cx - r, cy);
+        var end = new Point(cx + (r * Math.Cos(angle)), cy - (r * Math.Sin(angle)));
+        var figure = new PathFigure { StartPoint = start, IsClosed = false };
+        figure.Segments.Add(new ArcSegment(end, new Size(r, r), 0, isLargeArc: false, SweepDirection.Clockwise, isStroked: true));
+        var geometry = new PathGeometry([figure]);
+        geometry.Freeze();
+        return geometry;
+    }
+
+    private static IEnumerable<Shape> Shapes(Panel panel)
+    {
+        foreach (var child in panel.Children)
         {
-            part.Stroke = acOn ? t.GlyphOn : t.Glyph;
+            if (child is Shape shape)
+            {
+                yield return shape;
+            }
+            else if (child is Panel nested)
+            {
+                foreach (var inner in Shapes(nested))
+                {
+                    yield return inner;
+                }
+            }
         }
+    }
 
-        GAcHole1.Fill = GAcHole2.Fill = acOn ? t.GlyphOn : t.Glyph;
-        GAcPad.Fill = acOn ? t.AccentTint : null;
-
-        var dcOn = tel.DcOutputOn;
-        foreach (var part in new Shape[] { GUsb1, GUsb2, GUsbC, GCar })
+    private static void Paint(Panel group, Brush brush)
+    {
+        foreach (var shape in Shapes(group))
         {
-            part.Stroke = dcOn ? t.GlyphOn : t.Glyph;
+            shape.Stroke = brush;
+            if (Equals(shape.Tag, "dot"))
+            {
+                shape.Fill = brush;
+            }
         }
-
-        GDcPad.Fill = dcOn ? t.AccentTint : null;
-        GAcIn.Stroke = tel.AcInputW > 0 && tel.AcInputVolts > 100 ? t.Ok : t.Glyph;
-        GDcIn.Stroke = tel.DcInputW > 0 ? t.Ok : t.Glyph;
-
-        AutomationProperties.SetName(Glyph, string.Create(CultureInfo.InvariantCulture,
-            $"{s.Identity?.Model ?? "Station"}: {tel.BatteryPercent}%, AC output {(acOn ? "on" : "off")}, DC output {(dcOn ? "on" : "off")}"));
     }
 
     private void FillDetails(MonitorSnapshot s, StatusView v, Palette t)
@@ -321,6 +374,23 @@ internal sealed record Palette(
         B("#2C2C2C"), B("#14FFFFFF"), B("#0DFFFFFF"), B("#0FFFFFFF"), B("#FFFFFF"), B("#C8C8C8"), B("#14FFFFFF"),
         B("#0FFFFFFF"), B("#0AFFFFFF"), B("#0A7F7F7F"), B("#60CDFF"), B("#000000"), B("#2960CDFF"),
         B("#6CCB5F"), B("#FCE100"), B("#FF99A4"), B("#9D9D9D"), B("#FFFFFF"));
+
+    /// <summary>Publishes the tokens as dynamic resources (flyout and tray menu share them).</summary>
+    public void Apply(ResourceDictionary resources)
+    {
+        ArgumentNullException.ThrowIfNull(resources);
+        resources["Flyout"] = Flyout;
+        resources["FlyoutStroke"] = FlyoutStroke;
+        resources["Card"] = Card;
+        resources["CardStroke"] = CardStroke;
+        resources["Ink"] = Ink;
+        resources["Ink2"] = Ink2;
+        resources["Divider"] = Divider;
+        resources["SubtleHover"] = SubtleHover;
+        resources["SubtlePressed"] = SubtlePressed;
+        resources["Focus"] = Ink;
+        resources["FooterTint"] = FooterTint;
+    }
 
     private static SolidColorBrush B(string hex)
     {
