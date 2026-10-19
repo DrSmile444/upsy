@@ -12,7 +12,7 @@ The Bluetti EB3A is used as a UPS for a Windows PC, and its charge level and rem
 - Reconnect automatically when the link drops, after PC sleep, or when the Bluetooth radio comes back; show why it is disconnected. Allow pausing the connection for 30 minutes so the Bluetti phone app can use the station.
 - Derive state the station does not report: on mains vs on battery, charging (including DC/solar input), load present, and remaining runtime (capacity x battery % / smoothed discharge power).
 - Tray icon in the native Windows 11 style, with tooltip and context menu.
-- Left-click flyout with a small (96x72) vector glyph of the recognised station model whose battery fill, outputs and inputs light up from live data, plus expandable details including the station's settings (ECO, charging mode, power lifting, light).
+- Left-click flyout with a small (104x96) vector glyph of the recognised station model whose battery fill, outputs and inputs light up from live data, plus expandable details including the station's settings (ECO, charging mode, power lifting, light).
 - Windows notifications for low charge, critical charge (10%), and power-loss / mains-restored transitions.
 - Out of scope for phase 1: other Bluetti models and EcoFlow, controlling the station (writing registers 3000+), MQTT / Home Assistant.
 - Later (potential features): automatic PC hibernate/shutdown at critical charge; other Bluetti models; an installer/MSIX package.
