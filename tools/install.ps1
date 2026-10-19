@@ -72,7 +72,17 @@ if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed ($LASTEXITCODE)" }
 
 Stop-Upsy
 New-Item -ItemType Directory -Force $InstallDir | Out-Null
-Get-ChildItem $InstallDir -Exclude 'uninstall.ps1' | Remove-Item -Recurse -Force
+# The old exe can stay locked for a few seconds after the process exits (e.g. an antivirus scan); retry briefly.
+for ($attempt = 1; ; $attempt++) {
+    try {
+        Get-ChildItem $InstallDir -Exclude 'uninstall.ps1' | Remove-Item -Recurse -Force -ErrorAction Stop
+        break
+    }
+    catch {
+        if ($attempt -ge 10) { throw }
+        Start-Sleep -Seconds 1
+    }
+}
 Copy-Item (Join-Path $Staging '*') $InstallDir -Recurse -Force
 Copy-Item $PSCommandPath (Join-Path $InstallDir 'uninstall.ps1') -Force
 
