@@ -75,18 +75,27 @@ public static class Eb3aRegisters
 
         string Version(int reg) => ((C(reg) + (C(reg + 1) * 65536L)) / 100.0).ToString("0.00", CultureInfo.InvariantCulture);
 
-        return new StationIdentity(model.ToString(), serial.ToString(CultureInfo.InvariantCulture), Version(ArmVersion), Version(DspVersion));
+        return new StationIdentity(
+            model.ToString(),
+            serial.ToString(CultureInfo.InvariantCulture),
+            [new FirmwareVersion("ARM", Version(ArmVersion)), new FirmwareVersion("DSP", Version(DspVersion))]);
     }
 
+    /// <summary>Settings as readouts for the details list, in the order DESIGN.md shows them.</summary>
     public static StationSettings DecodeSettings(IReadOnlyList<ushort> settings)
     {
         ArgumentNullException.ThrowIfNull(settings);
         ushort S(int reg) => settings[reg - SettingsStart];
+        var led = S(LedModeRegister) switch { 1 => LedMode.Low, 2 => LedMode.High, 3 => LedMode.Sos, 4 => LedMode.Off, _ => LedMode.Unknown };
+        var charging = S(ChargingModeRegister) switch { 0 => ChargingMode.Standard, 1 => ChargingMode.Silent, 2 => ChargingMode.Turbo, _ => ChargingMode.Unknown };
+        var ecoOn = S(EcoOn) != 0;
         return new StationSettings(
-            Led: S(LedModeRegister) switch { 1 => LedMode.Low, 2 => LedMode.High, 3 => LedMode.Sos, 4 => LedMode.Off, _ => LedMode.Unknown },
-            EcoOn: S(EcoOn) != 0,
-            EcoShutdownHours: S(EcoShutdownHours),
-            Charging: S(ChargingModeRegister) switch { 0 => ChargingMode.Standard, 1 => ChargingMode.Silent, 2 => ChargingMode.Turbo, _ => ChargingMode.Unknown },
-            PowerLiftingOn: S(PowerLifting) != 0);
+            [
+                new("Charging mode", charging.ToString()),
+                new("ECO mode", ecoOn ? string.Create(CultureInfo.InvariantCulture, $"On · off after {S(EcoShutdownHours)} h at ≤10 W") : "Off"),
+                new("Power lifting", S(PowerLifting) != 0 ? "On" : "Off"),
+                new("Light", led switch { LedMode.Off => "Off", LedMode.Low => "Low", LedMode.High => "High", LedMode.Sos => "SOS", _ => "Unknown" }),
+            ],
+            LightOn: led is LedMode.Low or LedMode.High or LedMode.Sos);
     }
 }

@@ -66,7 +66,9 @@ public sealed class DecoderTests
     public void Identity_from_the_live_dump()
     {
         var id = Eb3aRegisters.DecodeIdentity(Fixtures.DumpCore);
-        Assert.Equal(new StationIdentity("EB3A", "2240000000001", "2063.02", "2052.07"), id);
+        Assert.Equal("EB3A", id.Model);
+        Assert.Equal("2240000000001", id.Serial);
+        Assert.Equal("ARM 2063.02 · DSP 2052.07", id.FirmwareText);
     }
 
     [Fact]
@@ -93,22 +95,34 @@ public sealed class DecoderTests
     public void Settings_from_the_live_dump()
     {
         var s = Eb3aRegisters.DecodeSettings(Fixtures.DumpSettings);
-        Assert.Equal(new StationSettings(LedMode.Off, EcoOn: true, EcoShutdownHours: 1, ChargingMode.Standard, PowerLiftingOn: false), s);
+        Assert.Equal(
+            [
+                new SettingReadout("Charging mode", "Standard"),
+                new SettingReadout("ECO mode", "On · off after 1 h at ≤10 W"),
+                new SettingReadout("Power lifting", "Off"),
+                new SettingReadout("Light", "Off"),
+            ],
+            s.Items);
+        Assert.False(s.LightOn);
     }
 
     [Theory]
-    [InlineData(1, LedMode.Low)]
-    [InlineData(2, LedMode.High)]
-    [InlineData(3, LedMode.Sos)]
-    [InlineData(4, LedMode.Off)]
-    [InlineData(9, LedMode.Unknown)]
-    public void Led_modes(int raw, LedMode expected) =>
-        Assert.Equal(expected, Eb3aRegisters.DecodeSettings(Fixtures.Settings(raw, 0, 1, 0, 0)).Led);
+    [InlineData(1, "Low", true)]
+    [InlineData(2, "High", true)]
+    [InlineData(3, "SOS", true)]
+    [InlineData(4, "Off", false)]
+    [InlineData(9, "Unknown", false)]
+    public void Led_modes(int raw, string text, bool on)
+    {
+        var s = Eb3aRegisters.DecodeSettings(Fixtures.Settings(raw, 0, 1, 0, 0));
+        Assert.Equal(text, s.Items.Single(i => i.Label == "Light").Value);
+        Assert.Equal(on, s.LightOn);
+    }
 
     [Theory]
-    [InlineData(0, ChargingMode.Standard)]
-    [InlineData(1, ChargingMode.Silent)]
-    [InlineData(2, ChargingMode.Turbo)]
-    public void Charging_modes(int raw, ChargingMode expected) =>
-        Assert.Equal(expected, Eb3aRegisters.DecodeSettings(Fixtures.Settings(4, 0, 1, raw, 0)).Charging);
+    [InlineData(0, "Standard")]
+    [InlineData(1, "Silent")]
+    [InlineData(2, "Turbo")]
+    public void Charging_modes(int raw, string expected) =>
+        Assert.Equal(expected, Eb3aRegisters.DecodeSettings(Fixtures.Settings(4, 0, 1, raw, 0)).Items.Single(i => i.Label == "Charging mode").Value);
 }

@@ -27,10 +27,10 @@ public sealed record PowerReading(bool OnMains, bool Charging, bool LoadPresent,
     }
 }
 
-/// <summary>Smoothed discharge power and remaining runtime.</summary>
-public sealed class RuntimeEstimator(TimeProvider clock)
+/// <summary>Smoothed discharge power and remaining runtime; a time to empty reported by the station wins over the estimate.</summary>
+/// <param name="nominalCapacityWh">The model's nominal capacity (StationProfile.NominalCapacityWh).</param>
+public sealed class RuntimeEstimator(TimeProvider clock, double nominalCapacityWh)
 {
-    public const double NominalCapacityWh = 268.0;
     public const double UsableFactor = 0.85;
     public static readonly TimeSpan TimeConstant = TimeSpan.FromSeconds(60);
     public static readonly TimeSpan WarmUp = TimeSpan.FromSeconds(10);
@@ -69,12 +69,22 @@ public sealed class RuntimeEstimator(TimeProvider clock)
     {
         ArgumentNullException.ThrowIfNull(t);
         ArgumentNullException.ThrowIfNull(p);
-        if (_average is null || p.OnMains || p.Charging || !p.LoadPresent || _last - _first < WarmUp || _average < 1)
+        if (p.OnMains || p.Charging || !p.LoadPresent)
         {
             return null;
         }
 
-        var hours = NominalCapacityWh * UsableFactor * t.BatteryPercent / 100.0 / _average.Value;
+        if (t.ToEmpty is { } reported)
+        {
+            return reported > Cap ? Cap : reported;
+        }
+
+        if (_average is null || _last - _first < WarmUp || _average < 1)
+        {
+            return null;
+        }
+
+        var hours = nominalCapacityWh * UsableFactor * t.BatteryPercent / 100.0 / _average.Value;
         var span = TimeSpan.FromHours(hours);
         return span > Cap ? Cap : span;
     }

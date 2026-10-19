@@ -16,25 +16,15 @@ public enum LinkStatus
     Connecting,
     Connected,
     Paused,
-}
 
-/// <summary>Bluetooth side of the monitor, implemented with WinRT in the app and faked in tests.</summary>
-public interface IStationTransport
-{
-    Task<RadioState> GetRadioStateAsync(CancellationToken ct);
+    /// <summary>EcoFlow: no account user ID is stored yet.</summary>
+    SignInNeeded,
 
-    /// <summary>Connects to <paramref name="knownAddress"/>, or scans by name when it is null or fails. Null when nothing was found.</summary>
-    Task<IStationSession?> ConnectAsync(ulong? knownAddress, CancellationToken ct);
-}
+    /// <summary>EcoFlow: the station answered authentication with the wrong-key code.</summary>
+    KeyRejected,
 
-public interface IStationSession : IAsyncDisposable
-{
-    ulong Address { get; }
-
-    bool IsConnected { get; }
-
-    /// <summary>Reads registers; null on timeout or an invalid response.</summary>
-    Task<ushort[]?> ReadAsync(ushort start, ushort count, CancellationToken ct);
+    /// <summary>EcoFlow: the key table file is missing or invalid.</summary>
+    KeyTableMissing,
 }
 
 public sealed record MonitorSnapshot(
@@ -44,35 +34,52 @@ public sealed record MonitorSnapshot(
     StationSettings? Settings,
     DateTimeOffset? UpdatedAt,
     DateTimeOffset? LastSeen,
-    DateTimeOffset? PausedUntil)
+    DateTimeOffset? PausedUntil,
+    int Failures = 0)
 {
     public static MonitorSnapshot Initial { get; } = new(LinkStatus.Searching, null, null, null, null, null, null);
 
     public bool HasData => Status == LinkStatus.Connected && Telemetry is not null;
+
+    /// <summary>The station cannot be read until the user acts (sign in, rebind, install the key table).</summary>
+    public bool NeedsUser => Status is LinkStatus.SignInNeeded or LinkStatus.KeyRejected or LinkStatus.KeyTableMissing;
 }
 
-/// <summary>Owns the connection lifecycle: radio check, connect, poll, back off, pause.</summary>
-public sealed class StationMonitor(IStationTransport transport, TimeProvider clock, ulong? knownAddress = null) : IDisposable
+/// <summary>
+/// Owns one station's connection lifecycle: radio check, open the GATT channel, run the model's driver under a
+/// no-update watchdog, back off, pause. The protocol itself lives in the driver.
+/// </summary>
+public sealed class StationMonitor(IStationTransport transport, IStationDriver driver, TimeProvider clock, ulong address) : IDisposable
 {
-    public static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(2);
-    public static readonly TimeSpan SettingsInterval = TimeSpan.FromMinutes(1);
     public static readonly TimeSpan MaxBackoff = TimeSpan.FromSeconds(30);
     public static readonly TimeSpan RadioRecheck = TimeSpan.FromSeconds(3);
     public static readonly TimeSpan PauseDuration = TimeSpan.FromMinutes(30);
-    public const int MaxConsecutiveFailures = 3;
+    public static readonly TimeSpan WatchdogTick = TimeSpan.FromSeconds(1);
 
     private readonly object _gate = new();
     private CancellationTokenSource _interrupt = new();
     private CancellationTokenSource? _linked;
     private DateTimeOffset? _pausedUntil;
-    private ulong? _address = knownAddress;
+    private LinkStatus? _blockedBy;
+    private ulong _address = address;
     private MonitorSnapshot _current = MonitorSnapshot.Initial;
 
     public event EventHandler<MonitorSnapshot>? Changed;
 
-    public event EventHandler<ulong>? AddressLearned;
-
     public MonitorSnapshot Current => _current;
+
+    public StationProfile Profile => driver.Profile;
+
+    public ulong Address
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _address;
+            }
+        }
+    }
 
     /// <summary>Releases the link for <see cref="PauseDuration"/> so another client can connect; resumes by itself.</summary>
     public void Pause()
@@ -95,8 +102,35 @@ public sealed class StationMonitor(IStationTransport transport, TimeProvider clo
         Interrupt();
     }
 
-    /// <summary>Drops the current session and connects again, e.g. after the PC resumes from sleep.</summary>
+    /// <summary>Drops the current link and connects again, e.g. after the PC resumes from sleep.</summary>
     public void Reconnect() => Interrupt();
+
+    /// <summary>Tries again after the user acted on a <see cref="MonitorSnapshot.NeedsUser"/> status (signed in, rebound the station).</summary>
+    public void Retry()
+    {
+        lock (_gate)
+        {
+            _blockedBy = null;
+        }
+
+        Interrupt();
+    }
+
+    /// <summary>The station was seen advertising at a new address; the next connect uses it.</summary>
+    public void UpdateAddress(ulong newAddress)
+    {
+        lock (_gate)
+        {
+            if (_address == newAddress)
+            {
+                return;
+            }
+
+            _address = newAddress;
+        }
+
+        Interrupt();
+    }
 
     public async Task RunAsync(CancellationToken ct)
     {
@@ -119,6 +153,13 @@ public sealed class StationMonitor(IStationTransport transport, TimeProvider clo
                     continue;
                 }
 
+                if (Blocked() is { } blocked)
+                {
+                    Publish(_current with { Status = blocked, PausedUntil = null });
+                    await Task.Delay(Timeout.InfiniteTimeSpan, clock, wake).ConfigureAwait(false);
+                    continue;
+                }
+
                 if (await transport.GetRadioStateAsync(wake).ConfigureAwait(false) != RadioState.On)
                 {
                     Publish(_current with { Status = LinkStatus.BluetoothOff, PausedUntil = null });
@@ -126,47 +167,51 @@ public sealed class StationMonitor(IStationTransport transport, TimeProvider clo
                     continue;
                 }
 
-                Publish(_current with { Status = _address is null ? LinkStatus.Searching : LinkStatus.Connecting, PausedUntil = null });
-                var session = await transport.ConnectAsync(_address, wake).ConfigureAwait(false);
-                if (session is null)
+                Publish(_current with { Status = LinkStatus.Connecting, PausedUntil = null, Failures = failures });
+                var channel = await transport.OpenAsync(Address, driver.Profile.Gatt, wake).ConfigureAwait(false);
+                if (channel is null)
                 {
                     failures++;
-                    Publish(_current with { Status = LinkStatus.Searching });
-                    await Task.Delay(Backoff(failures), clock, wake).ConfigureAwait(false);
+                    Publish(_current with { Status = LinkStatus.Searching, Failures = failures });
+                    await Task.Delay(Backoff(failures, driver.Profile.MinReconnectDelay), clock, wake).ConfigureAwait(false);
                     continue;
                 }
 
-                failures = 0;
-                if (_address != session.Address)
+                await using (channel.ConfigureAwait(false))
                 {
-                    _address = session.Address;
-                    AddressLearned?.Invoke(this, session.Address);
+                    if (await RunDriverAsync(channel, wake).ConfigureAwait(false))
+                    {
+                        failures = 0;
+                    }
                 }
 
-                await using (session.ConfigureAwait(false))
+                failures++;
+                Publish(_current with { Status = LinkStatus.Connecting, Failures = failures });
+                await Task.Delay(Backoff(failures, driver.Profile.MinReconnectDelay), clock, wake).ConfigureAwait(false);
+            }
+            catch (StationAuthException ex) when (!ct.IsCancellationRequested)
+            {
+                lock (_gate)
                 {
-                    await PollAsync(session, wake).ConfigureAwait(false);
+                    _blockedBy = ex.Status;
                 }
-
-                Publish(_current with { Status = LinkStatus.Connecting });
-                await Task.Delay(Backoff(1), clock, wake).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (!ct.IsCancellationRequested)
             {
-                // Interrupted by Pause/Resume/Reconnect: loop again with the new state.
+                // Interrupted by Pause/Resume/Reconnect/Retry: loop again with the new state.
             }
             catch (OperationCanceledException)
             {
                 break;
             }
-#pragma warning disable CA1031 // The loop must survive any transport failure and retry.
+#pragma warning disable CA1031 // The loop must survive any transport or protocol failure and retry.
             catch (Exception)
             {
                 failures++;
-                Publish(_current with { Status = LinkStatus.Searching });
+                Publish(_current with { Status = LinkStatus.Searching, Failures = failures });
                 try
                 {
-                    await Task.Delay(Backoff(failures), clock, ct).ConfigureAwait(false);
+                    await Task.Delay(Backoff(failures, driver.Profile.MinReconnectDelay), clock, ct).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
@@ -186,48 +231,61 @@ public sealed class StationMonitor(IStationTransport transport, TimeProvider clo
         }
     }
 
-    internal static TimeSpan Backoff(int failures)
+    internal static TimeSpan Backoff(int failures, TimeSpan minimum = default)
     {
         var seconds = Math.Min(MaxBackoff.TotalSeconds, 2 * Math.Pow(2, Math.Max(0, failures - 1)));
-        return TimeSpan.FromSeconds(seconds);
+        var span = TimeSpan.FromSeconds(seconds);
+        return span < minimum ? minimum : span;
     }
 
-    private async Task PollAsync(IStationSession session, CancellationToken ct)
+    /// <summary>Runs the driver until it returns, throws, or stays silent past the profile's timeout. True when it delivered data.</summary>
+    private async Task<bool> RunDriverAsync(IGattChannel channel, CancellationToken ct)
     {
-        var failures = 0;
-        var nextSettingsRead = DateTimeOffset.MinValue;
-        StationIdentity? identity = null;
-        var settings = _current.Settings;
-
-        while (!ct.IsCancellationRequested && session.IsConnected)
+        using var run = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        var lastTicks = clock.GetUtcNow().UtcTicks;
+        var delivered = false;
+        var watchdog = WatchAsync();
+        try
         {
-            var core = await session.ReadAsync(Eb3aRegisters.CoreStart, Eb3aRegisters.CoreCount, ct).ConfigureAwait(false);
-            var detail = core is null ? null : await session.ReadAsync(Eb3aRegisters.DetailStart, Eb3aRegisters.DetailCount, ct).ConfigureAwait(false);
-            if (core is null || detail is null)
-            {
-                if (++failures >= MaxConsecutiveFailures)
+            await driver.RunAsync(
+                channel,
+                data =>
                 {
-                    return;
-                }
+                    var now = clock.GetUtcNow();
+                    Interlocked.Exchange(ref lastTicks, now.UtcTicks);
+                    delivered = true;
+                    Publish(new MonitorSnapshot(LinkStatus.Connected, data.Telemetry, data.Identity ?? _current.Identity, data.Settings ?? _current.Settings, now, now, null));
+                },
+                run.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            // Watchdog: no update for too long.
+        }
+        finally
+        {
+            await run.CancelAsync().ConfigureAwait(false);
+            await watchdog.ConfigureAwait(false);
+        }
 
-                continue;
-            }
+        return delivered;
 
-            failures = 0;
-            identity ??= Eb3aRegisters.DecodeIdentity(core);
-            var now = clock.GetUtcNow();
-            if (now >= nextSettingsRead)
+        async Task WatchAsync()
+        {
+            try
             {
-                nextSettingsRead = now + SettingsInterval;
-                var raw = await session.ReadAsync(Eb3aRegisters.SettingsStart, Eb3aRegisters.SettingsCount, ct).ConfigureAwait(false);
-                if (raw is not null)
+                while (!run.Token.IsCancellationRequested)
                 {
-                    settings = Eb3aRegisters.DecodeSettings(raw);
+                    await Task.Delay(WatchdogTick, clock, run.Token).ConfigureAwait(false);
+                    if (clock.GetUtcNow().UtcTicks - Interlocked.Read(ref lastTicks) > driver.Profile.NoUpdateTimeout.Ticks)
+                    {
+                        await run.CancelAsync().ConfigureAwait(false);
+                    }
                 }
             }
-
-            Publish(new MonitorSnapshot(LinkStatus.Connected, Eb3aRegisters.DecodeTelemetry(core, detail), identity, settings, now, now, null));
-            await Task.Delay(PollInterval, clock, ct).ConfigureAwait(false);
+            catch (OperationCanceledException)
+            {
+            }
         }
     }
 
@@ -236,6 +294,10 @@ public sealed class StationMonitor(IStationTransport transport, TimeProvider clo
         if (snapshot.Status != LinkStatus.Connected)
         {
             snapshot = snapshot with { Telemetry = null, UpdatedAt = null };
+        }
+        else
+        {
+            snapshot = snapshot with { Failures = 0 };
         }
 
         _current = snapshot;
@@ -247,6 +309,14 @@ public sealed class StationMonitor(IStationTransport transport, TimeProvider clo
         lock (_gate)
         {
             return _pausedUntil;
+        }
+    }
+
+    private LinkStatus? Blocked()
+    {
+        lock (_gate)
+        {
+            return _blockedBy;
         }
     }
 

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Time.Testing;
 using Upsy.Core.Power;
+using Upsy.Core.Station;
 using static Upsy.Core.Tests.Fixtures;
 
 namespace Upsy.Core.Tests;
@@ -49,7 +50,7 @@ public sealed class RuntimeEstimatorTests
     [Fact]
     public void No_runtime_before_ten_seconds_of_samples()
     {
-        var est = new RuntimeEstimator(_clock);
+        var est = new RuntimeEstimator(_clock, StationCatalog.Eb3a.NominalCapacityWh);
         var t = T(56, acOut: 128);
         est.Add(t);
         _clock.Advance(TimeSpan.FromSeconds(4));
@@ -60,7 +61,7 @@ public sealed class RuntimeEstimatorTests
     [Fact]
     public void Fluctuating_load_gives_a_smooth_estimate()
     {
-        var est = new RuntimeEstimator(_clock);
+        var est = new RuntimeEstimator(_clock, StationCatalog.Eb3a.NominalCapacityWh);
         int[] loads = [156, 135, 129, 149, 120, 119, 126, 138, 126, 136, 118, 120, 144, 128];
         var estimates = new List<double>();
         foreach (var w in loads)
@@ -88,7 +89,7 @@ public sealed class RuntimeEstimatorTests
     [Fact]
     public void No_runtime_on_mains_or_without_load()
     {
-        var est = new RuntimeEstimator(_clock);
+        var est = new RuntimeEstimator(_clock, StationCatalog.Eb3a.NominalCapacityWh);
         for (var i = 0; i < 10; i++)
         {
             est.Add(T(56, acOut: 128));
@@ -104,7 +105,7 @@ public sealed class RuntimeEstimatorTests
     [Fact]
     public void Reset_requires_a_new_warm_up()
     {
-        var est = new RuntimeEstimator(_clock);
+        var est = new RuntimeEstimator(_clock, StationCatalog.Eb3a.NominalCapacityWh);
         var t = T(56, acOut: 128);
         for (var i = 0; i < 10; i++)
         {
@@ -121,7 +122,7 @@ public sealed class RuntimeEstimatorTests
     [Fact]
     public void Tiny_load_is_capped_at_a_day()
     {
-        var est = new RuntimeEstimator(_clock);
+        var est = new RuntimeEstimator(_clock, StationCatalog.Eb3a.NominalCapacityWh);
         var t = T(100, acOut: 21);
         for (var i = 0; i < 10; i++)
         {
@@ -131,5 +132,40 @@ public sealed class RuntimeEstimatorTests
 
         // 268 x 0.85 / 21 W is about 10.8 h, below the cap; a DC trickle is not.
         Assert.True(est.Estimate(t, PowerReading.From(t)) < RuntimeEstimator.Cap);
+    }
+
+    [Fact]
+    public void Station_reported_runtime_wins_and_reads_like_the_screen()
+    {
+        // DELTA 2 capture: on battery at 82%, 103 W on AC, station reports 431 min to empty.
+        var t = T(82, acOut: 103, volts: 0) with { ToEmpty = TimeSpan.FromMinutes(431) };
+        var est = new RuntimeEstimator(_clock, StationCatalog.Delta2.NominalCapacityWh);
+        var runtime = est.Estimate(t, PowerReading.From(t));
+        Assert.Equal(TimeSpan.FromMinutes(431), runtime);
+        Assert.Equal("about 7 h 10 min", Presentation.StatusText.Runtime(runtime!.Value));
+    }
+
+    [Fact]
+    public void Station_reported_runtime_is_not_shown_on_mains()
+    {
+        var t = T(80, acIn: 328, acOut: 101, volts: 233.3) with { ToEmpty = TimeSpan.FromMinutes(431) };
+        Assert.Null(new RuntimeEstimator(_clock, StationCatalog.Delta2.NominalCapacityWh).Estimate(t, PowerReading.From(t)));
+    }
+
+    [Fact]
+    public void Capacity_comes_from_the_model()
+    {
+        var eb3a = new RuntimeEstimator(_clock, StationCatalog.Eb3a.NominalCapacityWh);
+        var delta2 = new RuntimeEstimator(_clock, StationCatalog.Delta2.NominalCapacityWh);
+        var t = T(50, acOut: 100);
+        for (var i = 0; i <= 12; i++)
+        {
+            eb3a.Add(t);
+            delta2.Add(t);
+            _clock.Advance(TimeSpan.FromSeconds(1));
+        }
+
+        var p = PowerReading.From(t);
+        Assert.Equal(1024 / 268.0, delta2.Estimate(t, p)!.Value / eb3a.Estimate(t, p)!.Value, 3);
     }
 }
