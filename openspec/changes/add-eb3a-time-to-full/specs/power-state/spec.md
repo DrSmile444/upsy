@@ -2,16 +2,43 @@
 
 ## MODIFIED Requirements
 
+### Requirement: Remaining runtime on battery
+While on battery, not charging and with a load present, the app SHALL show the remaining runtime and SHALL say where it comes from. When the station reports its own time to empty (DELTA 2), the app SHALL use that value as reported. Otherwise it SHALL estimate runtime from the battery percentage, the model's nominal capacity (EB3A 268 Wh, DELTA 2 1024 Wh), a usable-energy factor, and a smoothed average of discharge power (total output minus DC input), and SHALL present it as an estimate.
+
+#### Scenario: Fluctuating load
+- **WHEN** EB3A output power varies between 118 and 156 W at 56% charge
+- **THEN** the estimate changes smoothly rather than jumping with each sample
+
+#### Scenario: Station-reported runtime
+- **WHEN** the DELTA 2 is on battery at 82% with 103 W on the AC output and reports 431 minutes to empty
+- **THEN** the app shows 7 h 11 min left, marked as the station's value
+
+#### Scenario: Estimated runtime
+- **WHEN** the EB3A is on battery at 58% with a steady 128 W load
+- **THEN** the app shows about 1 h left, marked as an estimate
+
+#### Scenario: Not enough data yet
+- **WHEN** fewer than about 10 seconds of power samples exist since connecting and the station reports no time to empty
+- **THEN** no runtime is shown
+
+#### Scenario: Very small load
+- **WHEN** the runtime exceeds 24 hours
+- **THEN** the runtime is shown as more than 24 hours
+
+#### Scenario: No load, charging or on mains
+- **WHEN** no load is present, the station is charging, or it is on mains
+- **THEN** no remaining runtime is shown and the state is shown instead
+
 ### Requirement: Time to full
-While charging, the app SHALL show the time to full as an approximation. When the station reports its own time to full (DELTA 2), the app SHALL use that value. Otherwise it SHALL estimate it from the model's nominal capacity, the battery percentage, the model's charge efficiency, and the net charge power (total input minus total output) smoothed over a few minutes, and SHALL show it only after about a minute of charging samples. It SHALL show no time to full when the station is not charging, including when net charge power is 10 W or less.
+While charging, the app SHALL show the time to full and SHALL say where it comes from. When the station reports its own time to full (DELTA 2), the app SHALL use that value as reported. Otherwise it SHALL estimate it from the model's nominal capacity, the battery percentage, the model's charge efficiency, and the net charge power (total input minus total output) smoothed over a few minutes, SHALL present it as an estimate, and SHALL show it only after about a minute of charging samples. It SHALL show no time to full when the station is not charging, including when net charge power is 10 W or less.
 
 #### Scenario: DELTA 2 charging
 - **WHEN** the DELTA 2 charges at 80% from 328 W of mains and reports 73 minutes to full
-- **THEN** the app shows charging with about 1 h 10 min to full
+- **THEN** the app shows charging with 1 h 13 min to full, marked as the station's value
 
 #### Scenario: EB3A charging
 - **WHEN** the EB3A has charged steadily for a minute at 54% with 390 W in and 126 W out
-- **THEN** the app shows charging at about +264 W with a time to full of 268 Wh × 46% ÷ (264 W × the EB3A charge efficiency), worded like "Full in about 35 min"
+- **THEN** the app shows charging at about +264 W with a time to full of 268 Wh × 46% ÷ (264 W × the EB3A charge efficiency), worded like "Full in about 35 min, estimated"
 
 #### Scenario: Load cycling while charging
 - **WHEN** the EB3A charges while its output switches between 40 W and 130 W every few minutes
@@ -27,13 +54,13 @@ While charging, the app SHALL show the time to full as an approximation. When th
 
 ## ADDED Requirements
 
-### Requirement: Charge log for calibration
-While a station charges, the app SHALL write one line a minute to its log with the station name, the battery percentage, the average input and output power over that minute, and the charge energy accumulated since charging started, integrated over every sample. A charge interrupted for more than a minute SHALL start a new accumulation.
+### Requirement: Energy log for calibration
+While a station charges, or discharges into a load on battery, the app SHALL write one line a minute to its log with the station name, the direction, the battery percentage, the average input and output power over that minute, and the energy accumulated since that charge or discharge started, integrated over every sample. A charge or discharge interrupted for more than a minute, or a change of direction, SHALL start a new accumulation.
 
-#### Scenario: Logged charge
-- **WHEN** the EB3A charges from 40% to 100% while its load cycles
-- **THEN** the log holds one line per minute from which the energy that went in and the percentage gained can be compared
+#### Scenario: Logged discharge and charge
+- **WHEN** the EB3A runs on battery from 100% to 40% with its load cycling, then charges back to 100%
+- **THEN** the log holds one discharge line and one charge line per minute, from which the energy taken out and put in can be compared with the percentage lost and gained
 
-#### Scenario: Not charging
-- **WHEN** the station is on battery, full, or paused in charging
-- **THEN** no charge log lines are written
+#### Scenario: Idle
+- **WHEN** the station is full on mains, paused in charging, or on battery without a load
+- **THEN** no energy log lines are written

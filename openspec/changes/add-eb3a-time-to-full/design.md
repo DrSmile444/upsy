@@ -2,63 +2,84 @@
 
 ## Context
 
-- `Telemetry.ToFull` exists and the DELTA 2 driver fills it from the station.
-- `StatusText` already words it ("Full in about … · mains 228 V", "Charging at 61%, full in about …") and `StationView` shows a "Full in" Details row. The surfaces are the frames in `design/upsy.design.html` #multi (DELTA 2 charging), so the EB3A only has to fill the same field.
-- `RuntimeEstimator` (one per station in `TrayApp.StationHost`) smooths discharge power with a 60 s exponential average, waits 10 s before showing anything, and prefers a reported `ToEmpty`.
+- `Telemetry.ToFull` and `Telemetry.ToEmpty` are filled only by the DELTA 2 driver, from the station.
+- `RuntimeEstimator` (one per station in `TrayApp.StationHost`) smooths discharge power with a 60 s exponential average, waits 10 s, and prefers a reported `ToEmpty`. Its result is a bare `TimeSpan?`, so `StatusText` cannot tell a station value from an estimate. It words both with "about" and rounding (DESIGN.md copy rule "Runtime always about").
+- `StatusText` already has slots for time to full ("Full in … · mains 228 V"), the mains-back alert ("Charging at 61%, full in …") and the "Full in" / "Empty in" Details rows in `StationView`. These are the frames in `design/upsy.design.html` #multi; the EB3A battery frames are in the first flyout boards.
 - `PowerReading` says "charging" when net (input − output) exceeds 10 W below 100%.
 
 Field data (see proposal):
-- Net charge power was 264 W at two different loads (126 W on 2026-10-12, 44 W on 2026-10-19).
-- 22% → 84% took 52 min, about 166 Wh, so about 192 W reached the battery.
-- The load is a boiler cycling about 40 ↔ 130 W.
-- At 92% the station sat with input = output during a thermal pause.
+- net charge 264 W at two loads;
+- 22% → 84% in 52 min (about 166 Wh, so about 192 W into the battery);
+- a boiler load cycling about 40 ↔ 130 W;
+- a thermal pause at 92% with input = output.
 
 ## Goals / Non-Goals
 
 **Goals:**
-- A steady, honest EB3A time to full that improves once one charge has been logged.
-- Calibration from data the app already sees, with no extra spike or pause.
+- An EB3A time to full that is steady and honest about being an estimate.
+- Station values worded exactly.
+- Calibration of both EB3A factors from one logged cycle, with no extra spike or pause.
 
 **Non-Goals:**
-- Modelling constant-voltage taper.
+- Modelling the charge taper.
 - Explaining thermal pauses.
-- Any change to DELTA 2 behaviour or to the UI copy.
+- Changing what the DELTA 2 reports.
 
 ## Decisions
 
-1. **Estimate in `RuntimeEstimator`, published as `Telemetry.ToFull`.**
-   - The estimator gains a charge side: an exponential average of net charge power (input − output, floored at 0), time constant 3 min, warm-up 60 s.
-   - `EstimateToFull(t, p)` returns null unless `p.Charging`. It returns the reported `t.ToFull` when present. Otherwise it computes `capacity × (100 − %) / 100 / (average × efficiency)`, capped at 24 h like runtime.
-   - `TrayApp` stores `t with { ToFull = estimate }` in the host's snapshot before building the view and the alerts, so `StatusText`, `StationView` and notifications need no change.
-   - Rejected: computing it inside `StatusText`, which would make presentation stateful. Also rejected: a separate `ToFullEstimate` field, a second path through every view.
+1. **`TimeEstimate(TimeSpan Value, bool FromStation)`** is what the estimator returns for both directions:
+   - `EstimateToEmpty(t, p)` keeps today's logic and marks a reported `ToEmpty` as `FromStation`;
+   - `EstimateToFull(t, p)` uses a reported `ToFull` as `FromStation`, otherwise the charge-side estimate.
 
-2. **3-minute smoothing, 60 s warm-up for charging.**
-   - The boiler compressor flips the output for minutes at a time. If the charger holds a constant charge power (the two 264 W samples suggest it does), net is steady and the window costs nothing.
-   - If it does not, a 3-minute average keeps the number from jumping on every compressor switch.
-   - The 60 s warm-up avoids flashing a time computed from the first samples after mains returns.
-   - Rejected: the 60 s discharge window, too jumpy for multi-minute load cycles.
-   - Rejected: averaging since the charge started, which reacts too slowly when the station's own charge rate changes (Silent/Turbo modes, thermal limits).
+   `StatusText.Build` and `StatusText.Alert` take these instead of a bare runtime, and `StationSection` carries them for the Details rows.
+   - Rejected: writing the estimate into `Telemetry.ToFull`, because the source would be lost and the wording could not differ.
+   - Rejected: a flag on `Telemetry`, because telemetry is what the station said, not what upsy inferred.
 
-3. **Per-model charge efficiency in `StationProfile`.**
-   - `ChargeEfficiency` is 0.75 for the EB3A, a provisional value from the 2026-10-19 charge, replaced by the calibrated one in tasks.
-   - The DELTA 2 gets 1.0; it is unused because the station reports its own value.
-   - Rejected: one global factor, because chargers differ per model.
+2. **Charge side of `RuntimeEstimator`.**
+   - An exponential average of net charge power (input − output, floored at 0) with a 3-minute time constant and a 60 s warm-up.
+   - The result is `capacity × (100 − %) / 100 / (average × efficiency)`, null unless `p.Charging`, capped at 24 h.
+   - The warm-up restarts after charging stops (net ≤ 10 W) and starts again.
+   - 3 minutes rides out boiler compressor cycles if the charger does not hold a constant power; the two 264 W samples suggest it does, in which case the window costs nothing.
+   - Rejected: the 60 s discharge window, too jumpy for multi-minute cycles.
+   - Rejected: averaging since the charge started, which reacts too slowly to Silent/Turbo or thermal changes.
 
-4. **`ChargeLog` in Core, written by the app.** A pure accumulator per station:
-   - `Add(telemetry, now)` integrates net W × dt for every sample while charging. Gaps over 10 s are not integrated.
-   - Once a minute it returns a summary: battery %, average in and out for the minute, accumulated Wh, and minutes since the start.
-   - A charge interrupted for more than a minute starts over.
-   - `TrayApp` writes each summary as a log line, for example `EB3A charge: 47%, in 309 W, out 88 W, +221 W net, 54.3 Wh in 15 min`.
-   - Rejected: a separate CSV file. One log keeps diagnostics in one place, and the line format is stable enough to parse.
+3. **Wording by source** (DESIGN.md copy rules and canvas updated first):
 
-5. **`tools/charge_efficiency.py`.**
-   - Parses the charge lines of one charge from `upsy.log`.
-   - Prints Δ% × capacity / accumulated Wh as the efficiency, plus the net-power spread to show whether the charger held a constant power under the load swings.
-   - Rejected: computing the factor inside the app automatically. One deliberate calibration is easier to check, and a wrong factor would silently skew every later estimate.
+   | | Station (`FromStation`) | Estimate |
+   |---|---|---|
+   | Headline (battery) | `7 h 11 min left` | `About 1 h left` |
+   | Line under it (battery) | `At the current 103 W load · from the station` | `Estimated at the current 128 W load` |
+   | Line under it (charging) | `Full in 1 h 13 min · mains 233 V` | `Full in about 35 min, estimated · mains 228 V` |
+   | Details row | `1 h 13 min (station)` | `About 35 min (estimated)` |
+   | Tooltip | `… · 7 h 11 min left` | `… · about 1 h left (estimated)` |
+   | Notification | `…, 7 h 11 min at 103 W.` | `…, about 1 h 40 min at 128 W (estimated).` |
+
+   - Station values are formatted exactly, to the minute ("1 h 13 min", "45 min"); estimates keep "about" and the 5/10-minute rounding. Both cap at "more than 24 h".
+   - Low and critical headlines keep "Low · about 20 min left"; the line under them already carries the instruction, so "estimated" goes into the tooltip and the notification.
+   - Rejected: "~35 min" and "est.", which read as abbreviations in a plain-language UI.
+
+4. **Per-model factors in `StationProfile`.**
+   - `ChargeEfficiency` (EB3A 0.75, provisional) joins the existing `UsableFactor`, which moves from a constant into the profile (EB3A 0.85, provisional).
+   - The DELTA 2 gets 1.0 for both; they are unused because it reports its own times.
+
+5. **`EnergyLog` in Core, written by the app.** A pure accumulator per station:
+   - Direction is *charge* (`p.Charging`) or *discharge* (on battery with a load). Anything else is idle.
+   - Every sample integrates net power × dt into the current run; gaps over 10 s are skipped.
+   - Once a minute it returns a summary: direction, battery %, average in and out for the minute, accumulated Wh, minutes since the start.
+   - Idle for more than a minute, or a change of direction, starts a new run.
+   - `TrayApp` writes summaries as log lines, for example `EB3A discharge: 72%, in 0 W, out 88 W, -88 W net, 23.1 Wh in 15 min` and `EB3A charge: 47%, in 309 W, out 88 W, +221 W net, 54.3 Wh in 15 min`.
+   - Rejected: a separate CSV file. One log keeps diagnostics in one place, and the line format is stable to parse.
+
+6. **`tools/energy_calibration.py`.** Reads the last complete discharge and charge runs from `upsy.log` and prints:
+   - *usable factor* = Wh out / (Δ% × capacity), for the runtime estimate;
+   - *charge efficiency* = (Δ% × capacity) / Wh in;
+   - the net-power spread of each run.
+   - Rejected: computing the factors in the app automatically. One deliberate calibration is easier to check, and a wrong factor would silently skew every later estimate.
 
 ## Risks / Trade-offs
 
-- [The provisional 0.75 is wrong] → The number is labelled "about". The calibration task replaces the value, and the tool shows the spread so a bad run is visible.
-- [Taper near 100% makes the last minutes slower than estimated] → Because the estimate uses current smoothed power, it lengthens as power drops. A taper model stays out of scope until the log shows one.
-- [Thermal pause] → Net ≤ 10 W is "not charging", so no time is shown and the estimate restarts its warm-up when charging resumes.
-- [Log growth] → One line a minute while charging, about 60–90 lines per charge, inside the existing 512 KB rotation.
+- [Provisional factors are wrong] → Every EB3A time says "estimated". The calibration task replaces both factors, and the tool shows the spread so a bad run is visible.
+- [Taper near 100% slows the last minutes] → The estimate uses current smoothed power, so it lengthens as power drops.
+- [Thermal pause] → Net ≤ 10 W counts as not charging: no time is shown and the warm-up restarts.
+- [Log growth] → One line a minute while charging or discharging, about 200 lines per full cycle, inside the 512 KB rotation.
+- [Exact station values change every minute] → They are the station's own numbers and change once a minute, which is fine at flyout glance speed.
