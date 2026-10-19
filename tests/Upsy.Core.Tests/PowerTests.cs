@@ -172,7 +172,7 @@ public sealed class RuntimeEstimatorTests
     [Fact]
     public void Profiles_carry_the_provisional_factors()
     {
-        Assert.Equal((0.85, 0.75), (StationCatalog.Eb3a.UsableFactor, StationCatalog.Eb3a.ChargeEfficiency));
+        Assert.Equal((0.85, 0.93), (StationCatalog.Eb3a.UsableFactor, StationCatalog.Eb3a.ChargeEfficiency));
         Assert.Equal((1.0, 1.0), (StationCatalog.Delta2.UsableFactor, StationCatalog.Delta2.ChargeEfficiency));
     }
 
@@ -193,8 +193,8 @@ public sealed class RuntimeEstimatorTests
         Feed(est, _ => t, 62);
         var full = est.EstimateToFull(t, PowerReading.From(t))!;
         Assert.False(full.FromStation);
-        // 268 Wh x 46% / (264 W x 0.75) = 0.6226 h
-        Assert.Equal(268 * 0.46 / (264 * 0.75), full.Value.TotalHours, 3);
+        // 268 Wh x 46% / (264 W x 0.93) = 0.5021 h
+        Assert.Equal(268 * 0.46 / (264 * 0.93), full.Value.TotalHours, 3);
     }
 
     [Fact]
@@ -236,7 +236,7 @@ public sealed class RuntimeEstimatorTests
             if (est.EstimateToFull(t, PowerReading.From(t)) is { } full)
             {
                 estimates.Add(full.Value.TotalMinutes);
-                direct.Add(268 * 0.5 / ((t.AcInputW - t.AcOutputW) * 0.75) * 60);
+                direct.Add(268 * 0.5 / ((t.AcInputW - t.AcOutputW) * 0.93) * 60);
             }
 
             _clock.Advance(TimeSpan.FromSeconds(2));

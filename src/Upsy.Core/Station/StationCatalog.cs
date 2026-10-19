@@ -19,9 +19,9 @@ public static class StationCatalog
         Gatt: new(Uuid(0xff00), Write: Uuid(0xff02), Notify: Uuid(0xff01)),
         NoUpdateTimeout: TimeSpan.FromSeconds(20),
         MinReconnectDelay: TimeSpan.Zero,
-        // Provisional until calibrated from a logged discharge and charge (tools/energy_calibration.py).
+        // Calibrated from a logged discharge and charge (tools/energy_calibration.py), see README.
         UsableFactor: 0.85,
-        ChargeEfficiency: 0.75);
+        ChargeEfficiency: 0.93);
 
     public static readonly StationProfile Delta2 = new(
         Key: "delta2",
