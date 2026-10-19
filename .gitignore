@@ -6,3 +6,4 @@ preview/
 *.user
 .vs/
 TestResults/
+.idea/
