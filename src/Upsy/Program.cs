@@ -14,6 +14,7 @@ namespace Upsy;
 public static class Program
 {
     private const string MutexName = @"Local\upsy-single-instance";
+    private static readonly int[] ThresholdPreview = [10, 15, 20, 25, 30];
 
     [STAThread]
     public static int Main(string[] args)
@@ -119,7 +120,42 @@ public static class Program
             }
         }
 
+        foreach (var light in new[] { true, false })
+        {
+            var threshold = TrayMenu.Item("Low battery alert", "", () => { }, meta: "20%");
+            threshold.Items.Add(new System.Windows.Controls.MenuItem());
+            System.Windows.Controls.Control[] main =
+            [
+                TrayMenu.Title("EB3A · 58% · 128 W out · about 1 h left"),
+                TrayMenu.Item("Open upsy", string.Empty, () => { }, bold: true),
+                TrayMenu.Item("Pause for 30 minutes", "", () => { }),
+                new System.Windows.Controls.Separator(),
+                TrayMenu.Item("Start with Windows", string.Empty, () => { }, isChecked: true),
+                threshold,
+                new System.Windows.Controls.Separator(),
+                TrayMenu.Item("Exit", "", () => { }),
+            ];
+            SaveVisual(TrayMenu.Build(main, light), Path.Combine(dir, $"menu-{(light ? "light" : "dark")}.png"));
+            System.Windows.Controls.Control[] steps = [.. ThresholdPreview.Select(v => TrayMenu.Item($"{v}%", string.Empty, () => { }, isChecked: v == 20))];
+            var sub = TrayMenu.Build(steps, light);
+            sub.MinWidth = 136;
+            SaveVisual(sub, Path.Combine(dir, $"menu-{(light ? "light" : "dark")}-threshold.png"));
+        }
+
         app.Shutdown();
         return 0;
+    }
+
+    private static void SaveVisual(FrameworkElement element, string path)
+    {
+        element.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        element.Arrange(new Rect(element.DesiredSize));
+        element.UpdateLayout();
+        var target = new RenderTargetBitmap((int)Math.Ceiling(element.ActualWidth * 2), (int)Math.Ceiling(element.ActualHeight * 2), 192, 192, PixelFormats.Pbgra32);
+        target.Render(element);
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(target));
+        using var file = File.Create(path);
+        encoder.Save(file);
     }
 }

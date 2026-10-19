@@ -17,7 +17,7 @@ public sealed class TrayApp : IDisposable
     private static readonly int[] ThresholdSteps = [10, 15, 20, 25, 30];
     private readonly System.Windows.Threading.Dispatcher _ui;
     private readonly NotifyIcon _notify;
-    private readonly ContextMenuStrip _menu = new() { RenderMode = ToolStripRenderMode.System, ShowImageMargin = false, ShowCheckMargin = true };
+    private readonly TrayMenu _menu = new();
     private readonly StationMonitor _monitor;
     private readonly RuntimeEstimator _estimator = new(TimeProvider.System);
     private readonly AlertMonitor _alerts = new(TimeProvider.System);
@@ -42,19 +42,23 @@ public sealed class TrayApp : IDisposable
             Log.Info($"station address {a:X12} remembered");
         });
 
-        _notify = new NotifyIcon { Text = "upsy", Visible = true, ContextMenuStrip = _menu };
+        _notify = new NotifyIcon { Text = "upsy", Visible = true };
         _notify.MouseClick += (_, e) =>
         {
             if (e.Button == MouseButtons.Left)
             {
                 ToggleFlyout();
             }
+            else if (e.Button == MouseButtons.Right)
+            {
+                _flyout.Hide();
+                _menu.ShowAtCursor(MenuItems(), WindowsTheme.AppsAreLight);
+            }
         };
-        _menu.Opening += (_, _) => BuildMenu();
 
         _flyout.PauseRequested += (_, _) => Pause();
         _flyout.ResumeRequested += (_, _) => _monitor.Resume();
-        _flyout.MoreRequested += (_, _) => _menu.Show(Cursor.Position);
+        _flyout.MoreRequested += (_, _) => _menu.ShowAbove(_flyout.MoreAnchor, MenuItems(), WindowsTheme.AppsAreLight);
         _flyout.BluetoothSettingsRequested += (_, _) => Process.Start(new ProcessStartInfo("ms-settings:bluetooth") { UseShellExecute = true });
 
         SystemEvents.UserPreferenceChanged += OnUserPreferenceChanged;
@@ -79,7 +83,6 @@ public sealed class TrayApp : IDisposable
 
         _notify.Visible = false;
         _notify.Dispose();
-        _menu.Dispose();
         TrayIconRenderer.Destroy(_icon);
         _monitor.Dispose();
         _stop.Dispose();
@@ -164,29 +167,31 @@ public sealed class TrayApp : IDisposable
         Log.Info("paused by user");
     }
 
-    private void BuildMenu()
+    /// <summary>Menu per DESIGN.md "Context menu" (Fluent glyphs in the Tag column).</summary>
+    private List<System.Windows.Controls.Control> MenuItems()
     {
-        _menu.Items.Clear();
         var view = StatusText.Build(_snapshot, Runtime(), _settings.LowPercent);
-        _menu.Items.Add(new ToolStripLabel(view.Tooltip) { ForeColor = System.Drawing.SystemColors.GrayText });
-        var open = new ToolStripMenuItem("Open upsy", null, (_, _) => ToggleFlyout());
-        open.Font = new System.Drawing.Font(open.Font, System.Drawing.FontStyle.Bold);
-        _menu.Items.Add(open);
-        _menu.Items.Add(_snapshot.Status == LinkStatus.Paused
-            ? new ToolStripMenuItem("Resume connection", null, (_, _) => _monitor.Resume())
-            : new ToolStripMenuItem("Pause for 30 minutes", null, (_, _) => Pause()));
-        _menu.Items.Add(new ToolStripSeparator());
-        _menu.Items.Add(new ToolStripMenuItem("Start with Windows", null, (_, _) => Autostart.Set(!Autostart.IsEnabled)) { Checked = Autostart.IsEnabled });
-        var threshold = new ToolStripMenuItem($"Low battery alert ({_settings.LowPercent}%)");
+        var paused = _snapshot.Status == LinkStatus.Paused;
+        var threshold = TrayMenu.Item("Low battery alert", "", () => { }, meta: $"{_settings.LowPercent}%");
         foreach (var step in ThresholdSteps)
         {
             var value = step;
-            threshold.DropDownItems.Add(new ToolStripMenuItem($"{value}%", null, (_, _) => SetThreshold(value)) { Checked = value == _settings.LowPercent });
+            threshold.Items.Add(TrayMenu.Item($"{value}%", string.Empty, () => SetThreshold(value), isChecked: value == _settings.LowPercent));
         }
 
-        _menu.Items.Add(threshold);
-        _menu.Items.Add(new ToolStripSeparator());
-        _menu.Items.Add(new ToolStripMenuItem("Exit", null, (_, _) => System.Windows.Application.Current.Shutdown()));
+        return
+        [
+            TrayMenu.Title(view.Tooltip),
+            TrayMenu.Item("Open upsy", string.Empty, ToggleFlyout, bold: true),
+            paused
+                ? TrayMenu.Item("Resume connection", "", _monitor.Resume)
+                : TrayMenu.Item("Pause for 30 minutes", "", Pause),
+            new System.Windows.Controls.Separator(),
+            TrayMenu.Item("Start with Windows", string.Empty, () => Autostart.Set(!Autostart.IsEnabled), isChecked: Autostart.IsEnabled),
+            threshold,
+            new System.Windows.Controls.Separator(),
+            TrayMenu.Item("Exit", "", () => System.Windows.Application.Current.Shutdown()),
+        ];
     }
 
     private void SetThreshold(int value)
