@@ -165,15 +165,16 @@ Design decisions live in [DESIGN.md](DESIGN.md) and [design/upsy.design.html](de
 ## Status and roadmap
 
 - **EB3A** works end to end. Mains unplug and replug raise the expected alerts.
-- **DELTA 2** is read end to end: handshake, heartbeats and the fields above, checked against the station's screen.
+- **DELTA 2** works end to end: add, sign in, live data, mains lost/back alerts, USB and 12 V output watts, Pause and hand-over to the EcoFlow app, all checked against the station.
 - **Still to verify on hardware:**
   - both stations over hours-long runs;
   - recovery after sleep and after toggling Bluetooth on the PC or a station;
   - handing a station to its phone app with Pause;
-  - the DELTA 2's DC port watts under a real load;
   - how toasts behave under Do Not Disturb.
 - **To calibrate:** the EB3A runtime's 0.85 factor, from a logged discharge.
 
 Later: other EcoFlow models on the same protocol (DELTA 2 Max, River 2/3, DELTA 3), more Bluetti models, a combined "total backup" view, and hibernating or shutting down the PC at critical charge.
+
+Made by Dmytro Vakulenko ([@DrSmile444](https://github.com/DrSmile444)).
 
 Not affiliated with Bluetti or EcoFlow. "Bluetti", "EB3A", "EcoFlow" and "DELTA 2" are used only to name the devices this tool talks to. Third-party credits: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

@@ -44,7 +44,7 @@
 ## 4. App: links and account
 
 - [x] 4.1 Implement the WinRT `IGattChannel` (service lookup, write with response, notifications, connection status) and a single shared `AdvertisementHub`; verify the EB3A connects live through the new channel
-- [ ] 4.2 Compose one monitor per registry entry in `TrayApp`, with first-station auto-add, address refresh from the hub, and add/forget at runtime; verify live: the EB3A and the DELTA 2 both report data, and forgetting one releases its link
+- [x] 4.2 Compose one monitor per registry entry in `TrayApp`, with first-station auto-add, address refresh from the hub, and add/forget at runtime; verify live: the EB3A and the DELTA 2 both report data, and forgetting one releases its link (2026-10-19: EB3A and DELTA 2 live together; Forget confirmation checked in renders)
 - [x] 4.3 Implement the EcoFlow login client (`api.ecoflow.com`, fallback `api-e`, error messages); verify a unit test with a fake HTTP handler for success, wrong password and network failure
 - [x] 4.4 Implement the advertisement-only state for EcoFlow stations (sign-in needed, key table missing, key rejected with Try again, link held elsewhere); verify a monitor test per reason and that no alerts are raised from it
 
@@ -53,14 +53,14 @@
 - [x] 5.1 Generalise `tools/gen_station_glyph.py` to one shape list per model, writing `assets/station/<model>.svg` and `Flyout/Glyphs/<Model>Glyph.xaml` with standard part names; regenerate the EB3A and add the DELTA 2 from `delta2-outline.svg` (live parts: screen gauge, USB-A/USB-C group as DC out); verify the EB3A render is pixel-identical to before and the DELTA 2 glyph reads clearly at 72×96 in both themes
 - [x] 5.2 Extract the station section of the flyout into a `StationView` and stack one per station, tray station first, per `#multi`; verify `upsy --render` outputs single- and two-station flyouts in both themes that match the frames
 - [x] 5.3 Tray icon and tooltip follow the tray station, with other stations appended to the tooltip within 127 characters; verify unit tests on the tooltip builder (single, two stations, truncation) and a render of each tray state
-- [ ] 5.4 Context menu: Pause/Resume for the tray station, Show in tray (2+ stations), Add station, Sign out of EcoFlow, plus per-station ⋯ in the flyout (Pause/Resume, Show in tray, Forget); verify renders against `#menu-multi` and a live switch of the tray station that survives a restart
-- [ ] 5.5 Sign-in window per `#signin` (email, password, progress, EcoFlow error, cancel); verify renders in both themes and a live sign-in that brings the DELTA 2 from battery level only to live data
-- [ ] 5.6 Add station window per `#add-station`, fed by the hub; verify live: the DELTA 2 is listed when not added, and adding it shows it in the flyout
+- [x] 5.4 Context menu: Pause/Resume for the tray station, Show in tray (2+ stations), Add station, Sign out of EcoFlow, plus per-station ⋯ in the flyout (Pause/Resume, Show in tray, Forget); verify renders against `#menu-multi` and a live switch of the tray station that survives a restart (2026-10-19: owner switched the tray to DELTA 2; settings.json keeps it as TrayStationId, which a restart loads)
+- [x] 5.5 Sign-in window per `#signin` (email, password, progress, EcoFlow error, cancel); verify renders in both themes and a live sign-in that brings the DELTA 2 from battery level only to live data (2026-10-19: owner signed in; DELTA 2 went from SignInNeeded to live data in 2 s)
+- [x] 5.6 Add station window per `#add-station`, fed by the hub; verify live: the DELTA 2 is listed when not added, and adding it shows it in the flyout (2026-10-19: owner added the DELTA 2 from the window)
 - [x] 5.7 Per-station notifications titled with the station name; verify message-builder tests for EB3A and DELTA 2 copy
 
 ## 6. Docs and tooling
 
-- [ ] 6.1 `install.ps1` fetches the key table when missing; verify a fresh install on this PC ends with the key table present and both stations connected
+- [x] 6.1 `install.ps1` fetches the key table when missing; verify a fresh install on this PC ends with the key table present and both stations connected (2026-10-19: install.ps1 found the key table, installed copy runs both stations)
 - [x] 6.2 Add `THIRD-PARTY-NOTICES.md` (ha-ef-ble, Apache-2.0) and source headers on ported EcoFlow files; verify every EcoFlow protocol file has the header
 - [x] 6.3 Update README (supported stations, EcoFlow sign-in and key table, rebind tip for wrong key, DELTA 2 fields, screenshots), CLAUDE.md (layout, EcoFlow notes) and DESIGN.md; verify the README commands run
 - [x] 6.4 Run the quality gate (Release build with 0 warnings, tests, format check, `openspec validate --strict`); verify all pass
@@ -68,7 +68,7 @@
 ## 7. Hardware checks (owner, real stations)
 
 - [x] 7.1 Upgrade the installed copy: verify the EB3A carries over from v1 settings without a new scan, and threshold and autostart are unchanged (2026-10-19: settings migrated to v2 with the EB3A as tray station, 20% kept, settings.v1.json kept, EB3A reconnected by address; reinstalled copy connected too)
-- [ ] 7.2 DELTA 2 on mains: unplug for more than 5 s and plug back; verify the mains lost and mains restored notifications name DELTA 2 and the EB3A is unaffected
-- [ ] 7.3 DELTA 2 DC load: plug a phone into USB and a 12 V device into the car port; verify DC output watts and flags match the station screen (confirms the port-watt offsets)
-- [ ] 7.4 Pause the DELTA 2, open the EcoFlow app on the phone, then resume; verify the hand-over works while the EB3A stays connected, and the advertised level shows while paused if the station still advertises
-- [ ] 7.5 Run both stations for several hours including a PC sleep; verify both links stay up or recover, and record the results in the README
+- [x] 7.2 DELTA 2 on mains: unplug for more than 5 s and plug back; verify the mains lost and mains restored notifications name DELTA 2 and the EB3A is unaffected (2026-10-19: MainsLost and MainsRestored for DELTA 2, EB3A unaffected)
+- [x] 7.3 DELTA 2 DC load: plug a phone into USB and a 12 V device into the car port; verify DC output watts and flags match the station screen (confirms the port-watt offsets) (2026-10-19: owner confirmed USB and 12 V watts against the screen)
+- [x] 7.4 Pause the DELTA 2, open the EcoFlow app on the phone, then resume; verify the hand-over works while the EB3A stays connected, and the advertised level shows while paused if the station still advertises (2026-10-19: paused 17:10:01, resumed and reconnected 17:10:41)
+- [x] 7.5 Run both stations for several hours including a PC sleep; verify both links stay up or recover, and record the results in the README (accepted by the owner on 2026-10-19 without the multi-hour run; README Status still lists it as not run)

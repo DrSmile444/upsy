@@ -8,7 +8,7 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <Deterministic>true</Deterministic>
     <InvariantGlobalization>false</InvariantGlobalization>
-    <Authors>upsy contributors</Authors>
+    <Authors>Dmytro Vakulenko</Authors>
     <Product>upsy</Product>
     <Version>0.1.0</Version>
   </PropertyGroup>

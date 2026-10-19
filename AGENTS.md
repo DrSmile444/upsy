@@ -39,7 +39,7 @@ The quality gate (build, test, format) must pass before a task is marked done. O
 - Read-only towards the station: never write registers or send control commands.
 - Pure logic takes plain values and an injected `TimeProvider`; no hardware in unit tests. Use frames captured from the real device as test data.
 - Generated files (`assets/station/{eb3a,delta2}.svg`, `src/Upsy/Flyout/Glyphs/*Glyph.xaml(.cs)`) are edited through their generator, not by hand.
-- No PII in tracked files, designs or screenshots: use placeholder identifiers in the real format (EB3A `2240000000001`, DELTA 2 `R331EXAMPLE00001` / `R33-0001`, address `A1B2C3D4E5F6`). Real ones stay in `local/devices.md`; captured fixtures get their serial swapped.
+- No PII in tracked files, designs or screenshots (the author, Dmytro Vakulenko / GitHub @DrSmile444, may be named): use placeholder device identifiers in the real format (EB3A `2240000000001`, DELTA 2 `R331EXAMPLE00001` / `R33-0001`, address `A1B2C3D4E5F6`). Real ones stay in `local/devices.md`; captured fixtures get their serial swapped.
 - Never commit EcoFlow's key table, an EcoFlow user ID or credentials.
 - Hardware checks are separate tasks from unit-tested ones; mark them done only after they were run on the real device.
 

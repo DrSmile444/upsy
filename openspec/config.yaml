@@ -25,7 +25,8 @@ context: |
   - Register addresses, scales and thresholds are named constants next to the code that uses them.
   - Read-only towards stations: Modbus function 0x03 only for Bluetti, only the session/auth messages for
     EcoFlow; never a command that changes an output or a setting.
-  - No PII in tracked files: placeholder serials and addresses only; real ones stay in local/.
+  - No PII in tracked files: placeholder serials and addresses only (naming the author, Dmytro Vakulenko /
+    @DrSmile444, is fine); real device identifiers stay in local/.
   - Commits follow Conventional Commits.
 
   Quality gate (must pass before a task is marked done):

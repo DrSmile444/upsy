@@ -89,7 +89,7 @@ $entry = @{
     DisplayName     = $Name
     DisplayVersion  = $version
     DisplayIcon     = $Exe
-    Publisher       = 'upsy contributors'
+    Publisher       = 'Dmytro Vakulenko'
     InstallLocation = $InstallDir
     UninstallString = "powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$InstallDir\uninstall.ps1`" -Uninstall"
 }
