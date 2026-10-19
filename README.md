@@ -19,7 +19,7 @@ The EB3A makes a good small UPS for a desk PC, but its state is only visible on 
 
 | | |
 |---|---|
-| **Tray icon** | The battery percentage, redrawn for your taskbar theme and DPI. A green bar while charging, amber at your alert threshold, red at 10%. A full-battery glyph at 100%, a crossed-out battery without data, pause bars while paused. |
+| **Tray icon** | The battery percentage, redrawn for your taskbar theme and DPI. A green bar while charging, amber at your alert threshold, red at 10%. At 100%, without data and while paused it uses the same Fluent battery glyphs as Windows itself. |
 | **Tooltip** | One line: `EB3A · 58% · 128 W out · about 1 h left`. |
 | **Flyout** (left-click) | A small live drawing of the station (its screen fills to the charge level, active outputs and the feeding input light up), the percentage, runtime or charging state, In/Out power, and a Details section with everything the station reports: AC/DC power and voltage, output switches, ECO mode, charging mode, power lifting, light, serial number and firmware. |
 | **Menu** (right-click) | Open, Pause for 30 minutes, Start with Windows, low-battery threshold (10-30%), Exit. |
@@ -47,12 +47,14 @@ cd bluetti-battery
 dotnet run --project src/Upsy -c Release
 ```
 
-or build once and start the executable:
+or install it for your user (no admin rights; needs the .NET 10 Desktop Runtime, which the SDK includes):
 
 ```powershell
-dotnet publish src/Upsy -c Release -o out
-.\out\upsy.exe
+pwsh tools/install.ps1            # build, install to %LOCALAPPDATA%\Programs\upsy and start
+pwsh tools/install.ps1 -Uninstall # or Settings > Apps > upsy > Uninstall
 ```
+
+The installer adds a Start menu shortcut and an entry in Settings > Apps. Run it again to update. If **Start with Windows** is on, the autostart entry is moved to the installed copy.
 
 No window opens: look for the number in the notification area (it may start in the overflow; drag it onto the taskbar). On first start upsy scans for a device named `EB3A…`, connects, and remembers its address in `%APPDATA%\upsy\settings.json`. Turn on **Start with Windows** in the right-click menu to keep it running.
 
@@ -124,6 +126,6 @@ Design decisions live in [DESIGN.md](DESIGN.md) and [design/upsy.design.html](de
 
 Phase 1 works end to end against a real EB3A: discovery without pairing, live telemetry, identity and settings, tray icon, flyout, menu, notifications. Still to verify on hardware over long runs: hours-long link stability, mains unplug/replug notifications, phone-app coexistence. The runtime estimate's 0.85 factor is to be calibrated from a logged discharge.
 
-Later: hibernate or shut down the PC at critical charge, other Bluetti models, an installer.
+Later: hibernate or shut down the PC at critical charge, other Bluetti models.
 
 Not affiliated with Bluetti. "Bluetti" and "EB3A" are used only to name the device this tool talks to.
