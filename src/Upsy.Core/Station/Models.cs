@@ -41,6 +41,8 @@ public sealed record GattProfile(Guid Service, Guid Write, Guid Notify);
 /// <param name="MinReconnectDelay">Wait at least this long after a link ends before connecting again.</param>
 /// <param name="DcInputLabel">What the model's DC input is called in the details ("Solar / car input").</param>
 /// <param name="DcOutputLabel">What the model's DC outputs are called in the details ("USB and 12 V output").</param>
+/// <param name="UsableFactor">Share of the nominal capacity that comes out on discharge, for the runtime estimate.</param>
+/// <param name="ChargeEfficiency">Share of the measured net input that ends up in the battery, for the time-to-full estimate.</param>
 public sealed record StationProfile(
     string Key,
     string Vendor,
@@ -50,7 +52,9 @@ public sealed record StationProfile(
     TimeSpan NoUpdateTimeout,
     TimeSpan MinReconnectDelay,
     string DcInputLabel = "DC input",
-    string DcOutputLabel = "DC output")
+    string DcOutputLabel = "DC output",
+    double UsableFactor = 1.0,
+    double ChargeEfficiency = 1.0)
 {
     public string FullName => $"{Vendor} {Model}";
 }

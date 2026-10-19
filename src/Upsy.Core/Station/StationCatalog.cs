@@ -18,7 +18,10 @@ public static class StationCatalog
         NominalCapacityWh: 268,
         Gatt: new(Uuid(0xff00), Write: Uuid(0xff02), Notify: Uuid(0xff01)),
         NoUpdateTimeout: TimeSpan.FromSeconds(20),
-        MinReconnectDelay: TimeSpan.Zero);
+        MinReconnectDelay: TimeSpan.Zero,
+        // Provisional until calibrated from a logged discharge and charge (tools/energy_calibration.py).
+        UsableFactor: 0.85,
+        ChargeEfficiency: 0.75);
 
     public static readonly StationProfile Delta2 = new(
         Key: "delta2",

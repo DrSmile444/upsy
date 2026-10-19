@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using Upsy.Core.Link;
+using Upsy.Core.Power;
 using Upsy.Core.Presentation;
 using Upsy.Core.Station;
 using Upsy.Flyout.Glyphs;
@@ -12,7 +13,11 @@ namespace Upsy.Flyout;
 /// <summary>What the flyout shows for one station.</summary>
 /// <param name="IsTray">The station the tray icon shows (pinned, listed first).</param>
 /// <param name="Several">More than one station is listed: show the station More button.</param>
-public sealed record StationSection(string Id, StationProfile Profile, StatusView View, MonitorSnapshot Snapshot, bool IsTray, bool Several);
+/// <param name="ToEmpty">Runtime on battery, the station's or upsy's estimate (worded by source in Details).</param>
+/// <param name="ToFull">Time to full while charging, the station's or upsy's estimate.</param>
+public sealed record StationSection(
+    string Id, StationProfile Profile, StatusView View, MonitorSnapshot Snapshot, bool IsTray, bool Several,
+    TimeEstimate? ToEmpty = null, TimeEstimate? ToFull = null);
 
 /// <summary>One station in the flyout: glyph, level and state, In/Out strip, notice, Details.</summary>
 public partial class StationView : UserControl
@@ -167,13 +172,13 @@ public partial class StationView : UserControl
             ("Load present", p.LoadPresent ? "Yes" : "No"),
         };
 
-        if (tel.ToFull is { } full && p.Charging)
+        if (section.ToFull is { } full)
         {
-            rows.Add(("Full in", $"{Capitalize(StatusText.Runtime(full))} (station)"));
+            rows.Add(("Full in", StatusText.DetailsValue(full)));
         }
-        else if (tel.ToEmpty is { } empty && !p.OnMains && p.LoadPresent)
+        else if (section.ToEmpty is { } empty)
         {
-            rows.Add(("Empty in", $"{Capitalize(StatusText.Runtime(empty))} (station)"));
+            rows.Add(("Empty in", StatusText.DetailsValue(empty)));
         }
 
         if (s.Settings is { Items.Count: > 0 } settings)
@@ -217,8 +222,6 @@ public partial class StationView : UserControl
             }
         }
     }
-
-    private static string Capitalize(string text) => text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];
 
     private void OnDetailsToggled(object sender, RoutedEventArgs e)
     {

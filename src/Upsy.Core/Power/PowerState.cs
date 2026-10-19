@@ -27,45 +27,53 @@ public sealed record PowerReading(bool OnMains, bool Charging, bool LoadPresent,
     }
 }
 
-/// <summary>Smoothed discharge power and remaining runtime; a time to empty reported by the station wins over the estimate.</summary>
-/// <param name="nominalCapacityWh">The model's nominal capacity (StationProfile.NominalCapacityWh).</param>
-public sealed class RuntimeEstimator(TimeProvider clock, double nominalCapacityWh)
+/// <summary>A time to empty or to full, and whether the station reported it or upsy estimated it (the wording differs).</summary>
+public sealed record TimeEstimate(TimeSpan Value, bool FromStation);
+
+/// <summary>
+/// Remaining runtime and time to full for one station. A time the station reports wins; otherwise upsy estimates
+/// from the model's capacity and factors and a smoothed power: discharge over about a minute, net charge over a
+/// few minutes so a load that cycles (a boiler compressor) does not jump the number.
+/// </summary>
+public sealed class RuntimeEstimator(TimeProvider clock, StationProfile profile)
 {
-    public const double UsableFactor = 0.85;
     public static readonly TimeSpan TimeConstant = TimeSpan.FromSeconds(60);
     public static readonly TimeSpan WarmUp = TimeSpan.FromSeconds(10);
+    public static readonly TimeSpan ChargeTimeConstant = TimeSpan.FromMinutes(3);
+    public static readonly TimeSpan ChargeWarmUp = TimeSpan.FromSeconds(60);
     public static readonly TimeSpan Cap = TimeSpan.FromHours(24);
 
-    private double? _average;
-    private DateTimeOffset _first;
-    private DateTimeOffset _last;
+    private readonly Smoothed _discharge = new(TimeConstant);
+    private readonly Smoothed _charge = new(ChargeTimeConstant);
 
-    public double? AverageDischargeW => _average;
+    public double? AverageDischargeW => _discharge.Value;
 
-    public void Reset() => _average = null;
+    public double? AverageChargeW => _charge.Value;
+
+    public void Reset()
+    {
+        _discharge.Reset();
+        _charge.Reset();
+    }
 
     public void Add(Telemetry t)
     {
         ArgumentNullException.ThrowIfNull(t);
         var now = clock.GetUtcNow();
-        var discharge = Math.Max(0, t.AcOutputW + t.DcOutputW - t.DcInputW);
-        if (_average is null)
+        _discharge.Add(Math.Max(0, t.AcOutputW + t.DcOutputW - t.DcInputW), now);
+        if (PowerReading.From(t).Charging)
         {
-            _average = discharge;
-            _first = now;
+            _charge.Add(Math.Max(0, t.AcInputW + t.DcInputW - t.AcOutputW - t.DcOutputW), now);
         }
         else
         {
-            var dt = Math.Max(0, (now - _last).TotalSeconds);
-            var alpha = 1 - Math.Exp(-dt / TimeConstant.TotalSeconds);
-            _average += alpha * (discharge - _average.Value);
+            // A pause (thermal, full, unplugged) ends the charge average; the warm-up starts again with the next charge.
+            _charge.Reset();
         }
-
-        _last = now;
     }
 
-    /// <summary>Remaining runtime, or null when it should not be shown. Values above the cap return <see cref="Cap"/>.</summary>
-    public TimeSpan? Estimate(Telemetry t, PowerReading p)
+    /// <summary>Remaining runtime on battery with a load, or null when it should not be shown.</summary>
+    public TimeEstimate? EstimateToEmpty(Telemetry t, PowerReading p)
     {
         ArgumentNullException.ThrowIfNull(t);
         ArgumentNullException.ThrowIfNull(p);
@@ -76,16 +84,71 @@ public sealed class RuntimeEstimator(TimeProvider clock, double nominalCapacityW
 
         if (t.ToEmpty is { } reported)
         {
-            return reported > Cap ? Cap : reported;
+            return new(Capped(reported), FromStation: true);
         }
 
-        if (_average is null || _last - _first < WarmUp || _average < 1)
+        if (!_discharge.Ready(WarmUp) || _discharge.Value < 1)
         {
             return null;
         }
 
-        var hours = nominalCapacityWh * UsableFactor * t.BatteryPercent / 100.0 / _average.Value;
-        var span = TimeSpan.FromHours(hours);
-        return span > Cap ? Cap : span;
+        var hours = profile.NominalCapacityWh * profile.UsableFactor * t.BatteryPercent / 100.0 / _discharge.Value!.Value;
+        return new(Capped(TimeSpan.FromHours(hours)), FromStation: false);
+    }
+
+    /// <summary>Time to full while charging, or null when it should not be shown.</summary>
+    public TimeEstimate? EstimateToFull(Telemetry t, PowerReading p)
+    {
+        ArgumentNullException.ThrowIfNull(t);
+        ArgumentNullException.ThrowIfNull(p);
+        if (!p.Charging)
+        {
+            return null;
+        }
+
+        if (t.ToFull is { } reported)
+        {
+            return new(Capped(reported), FromStation: true);
+        }
+
+        if (!_charge.Ready(ChargeWarmUp) || _charge.Value < 1)
+        {
+            return null;
+        }
+
+        var missingWh = profile.NominalCapacityWh * (100 - t.BatteryPercent) / 100.0;
+        var hours = missingWh / (_charge.Value!.Value * profile.ChargeEfficiency);
+        return new(Capped(TimeSpan.FromHours(hours)), FromStation: false);
+    }
+
+    private static TimeSpan Capped(TimeSpan span) => span > Cap ? Cap : span;
+
+    /// <summary>Exponential moving average over time, with the span it has been fed for.</summary>
+    private sealed class Smoothed(TimeSpan timeConstant)
+    {
+        private DateTimeOffset _first;
+        private DateTimeOffset _last;
+
+        public double? Value { get; private set; }
+
+        public void Reset() => Value = null;
+
+        public void Add(double sample, DateTimeOffset now)
+        {
+            if (Value is null)
+            {
+                Value = sample;
+                _first = now;
+            }
+            else
+            {
+                var dt = Math.Max(0, (now - _last).TotalSeconds);
+                Value += (1 - Math.Exp(-dt / timeConstant.TotalSeconds)) * (sample - Value.Value);
+            }
+
+            _last = now;
+        }
+
+        public bool Ready(TimeSpan warmUp) => Value is not null && _last - _first >= warmUp;
     }
 }

@@ -75,7 +75,35 @@ public static class StatusText
         return h == 0 ? $"about {m} min" : m == 0 ? $"about {h} h" : $"about {h} h {m} min";
     }
 
-    public static StatusView Build(MonitorSnapshot s, TimeSpan? runtime, int lowPercent, StationContext? station = null)
+    /// <summary>A station's own time, to the minute: "7 h 11 min", "45 min", "1 h", "more than 24 h".</summary>
+    public static string Exact(TimeSpan span)
+    {
+        if (span >= RuntimeEstimator.Cap)
+        {
+            return "more than 24 h";
+        }
+
+        var minutes = Math.Max(1, (int)Math.Round(span.TotalMinutes, MidpointRounding.AwayFromZero));
+        var h = minutes / 60;
+        var m = minutes % 60;
+        return h == 0 ? $"{m} min" : m == 0 ? $"{h} h" : $"{h} h {m} min";
+    }
+
+    /// <summary>A station's time exactly, upsy's estimate as "about …" (DESIGN.md "Copy rules").</summary>
+    public static string Duration(TimeEstimate time)
+    {
+        ArgumentNullException.ThrowIfNull(time);
+        return time.FromStation ? Exact(time.Value) : Runtime(time.Value);
+    }
+
+    /// <summary>The Details row value: "1 h 13 min (station)" or "About 35 min (estimated)".</summary>
+    public static string DetailsValue(TimeEstimate time)
+    {
+        ArgumentNullException.ThrowIfNull(time);
+        return $"{Capitalize(Duration(time))} {(time.FromStation ? "(station)" : "(estimated)")}";
+    }
+
+    public static StatusView Build(MonitorSnapshot s, TimeEstimate? toEmpty, TimeEstimate? toFull, int lowPercent, StationContext? station = null)
     {
         ArgumentNullException.ThrowIfNull(s);
         station ??= StationContext.Eb3a;
@@ -100,7 +128,7 @@ public static class StatusText
             if (p.Charging)
             {
                 headline = $"Charging · +{p.NetBatteryW} W";
-                detail = t.ToFull is { } full ? $"Full in {Runtime(full)} · {Lower(volts)}" : volts;
+                detail = toFull is { } full ? $"Full in {Duration(full)}{Estimated(full, ",")} · {Lower(volts)}" : volts;
                 tone = Tone.Ok;
                 tip = $"{name} · {t.BatteryPercent}% · charging +{p.NetBatteryW} W";
                 brief = $"{name} · {t.BatteryPercent}% · charging";
@@ -119,12 +147,13 @@ public static class StatusText
             var critical = t.BatteryPercent <= AlertMonitor.CriticalPercent;
             var low = t.BatteryPercent <= lowPercent;
             tone = critical ? Tone.Critical : low ? Tone.Caution : Tone.Neutral;
-            var left = runtime is { } r ? $"{Runtime(r)} left" : null;
+            var left = toEmpty is { } r ? $"{Duration(r)} left" : null;
+            var leftTip = toEmpty is { } rt ? $" · {Duration(rt)} left{Estimated(rt, " (")}" : string.Empty;
             brief = $"{name} · {t.BatteryPercent}% · {p.OutputW} W out";
             if (p.Charging)
             {
                 headline = $"Charging · +{p.NetBatteryW} W";
-                detail = t.ToFull is { } full ? $"Full in {Runtime(full)} · from DC input" : "From DC input";
+                detail = toFull is { } full ? $"Full in {Duration(full)}{Estimated(full, ",")} · from DC input" : "From DC input";
                 tone = Tone.Ok;
                 tip = $"{name} · {t.BatteryPercent}% · charging +{p.NetBatteryW} W";
                 brief = $"{name} · {t.BatteryPercent}% · charging";
@@ -133,19 +162,22 @@ public static class StatusText
             {
                 headline = left is null ? "Critical" : $"Critical · {left}";
                 detail = "Shut down or hibernate now.";
-                tip = brief + (left is null ? "" : $" · {left}");
+                tip = brief + leftTip;
             }
             else if (low)
             {
                 headline = left is null ? "Low" : $"Low · {left}";
                 detail = $"Save your work. Alert threshold is {lowPercent}%.";
-                tip = brief + (left is null ? "" : $" · {left}");
+                tip = brief + leftTip;
             }
             else
             {
                 headline = left is null ? (p.LoadPresent ? "On battery" : "On battery · no load") : Capitalize(left);
-                detail = p.LoadPresent ? $"At the current {p.OutputW} W load" : null;
-                tip = brief + (left is null ? "" : $" · {left}");
+                detail = !p.LoadPresent ? null
+                    : toEmpty is null ? $"At the current {p.OutputW} W load"
+                    : toEmpty.FromStation ? $"At the current {p.OutputW} W load · from the station"
+                    : $"Estimated at the current {p.OutputW} W load";
+                tip = brief + leftTip;
             }
         }
 
@@ -180,16 +212,16 @@ public static class StatusText
         return text;
     }
 
-    public static (string Title, string Body) Alert(AlertKind kind, Telemetry t, TimeSpan? runtime, string name)
+    public static (string Title, string Body) Alert(AlertKind kind, Telemetry t, TimeEstimate? toEmpty, TimeEstimate? toFull, string name)
     {
         ArgumentNullException.ThrowIfNull(t);
         var p = PowerReading.From(t);
-        var left = runtime is { } r ? $"{Capitalize(Runtime(r))} left at {p.OutputW} W." : $"{p.OutputW} W out.";
+        var left = toEmpty is { } r ? $"{Capitalize(Duration(r))} left at {p.OutputW} W{Estimated(r, " (")}." : $"{p.OutputW} W out.";
         return kind switch
         {
-            AlertKind.MainsLost => ($"{name}: mains power lost", $"On battery at {t.BatteryPercent}%" + (runtime is { } rr ? $", {Runtime(rr)} at {p.OutputW} W." : ".")),
+            AlertKind.MainsLost => ($"{name}: mains power lost", $"On battery at {t.BatteryPercent}%" + (toEmpty is { } rr ? $", {Duration(rr)} at {p.OutputW} W{Estimated(rr, " (")}." : ".")),
             AlertKind.MainsRestored => ($"{name}: mains power is back", p.Charging
-                ? $"Charging at {t.BatteryPercent}%" + (t.ToFull is { } full ? $", full in {Runtime(full)}." : ".")
+                ? $"Charging at {t.BatteryPercent}%" + (toFull is { } full ? $", full in {Duration(full)}{Estimated(full, " (")}." : ".")
                 : $"On mains at {t.BatteryPercent}%."),
             AlertKind.BatteryLow => ($"{name}: battery low, {t.BatteryPercent}%", $"{left} Save your work."),
             AlertKind.BatteryCritical => ($"{name}: battery critical, {t.BatteryPercent}%", $"{left} Shut down or hibernate now."),
@@ -236,6 +268,10 @@ public static class StatusText
                 name, Brief: $"{name} · not connected"),
         };
     }
+
+    /// <summary>The "estimated" mark for upsy's own times: ", estimated" or " (estimated)"; nothing for a station's time.</summary>
+    private static string Estimated(TimeEstimate time, string style) =>
+        time.FromStation ? string.Empty : style == "," ? ", estimated" : " (estimated)";
 
     private static string Lower(string text) => text.Length == 0 ? text : char.ToLowerInvariant(text[0]) + text[1..];
 

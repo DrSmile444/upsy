@@ -146,9 +146,16 @@ public sealed class TrayApp : IDisposable
             }
 
             host.Estimator.Add(t);
+            if (host.Energy.Add(t) is { } minute)
+            {
+                // Calibration data for tools/energy_calibration.py; keep the format stable.
+                Log.Info(string.Create(System.Globalization.CultureInfo.InvariantCulture,
+                    $"{name} {(minute.Direction == EnergyDirection.Charge ? "charge" : "discharge")}: {minute.Percent}%, in {minute.AverageInW} W, out {minute.AverageOutW} W, {minute.AverageNetW:+0;-0;0} W net, {minute.EnergyWh:0.0} Wh in {(int)minute.Elapsed.TotalMinutes} min"));
+            }
+
             foreach (var alert in host.Alerts.Observe(t))
             {
-                var (title, body) = StatusText.Alert(alert, t, host.Runtime(), name);
+                var (title, body) = StatusText.Alert(alert, t, host.ToEmpty(), host.ToFull(), name);
                 Log.Info($"alert {alert} for {name}: {body}");
                 _notify.ShowBalloonTip(10_000, title, body, alert is AlertKind.BatteryCritical or AlertKind.MainsLost ? ToolTipIcon.Warning : ToolTipIcon.Info);
             }
@@ -260,7 +267,7 @@ public sealed class TrayApp : IDisposable
         return new StationContext(_registry.DisplayName(host.Entry), host.Entry.Profile!, fresh ? host.AdvertisedPercent : null);
     }
 
-    private StatusView View(StationHost host) => StatusText.Build(host.Snapshot, host.Runtime(), _settings.LowPercent, Context(host));
+    private StatusView View(StationHost host) => StatusText.Build(host.Snapshot, host.ToEmpty(), host.ToFull(), _settings.LowPercent, Context(host));
 
     private void Refresh()
     {
@@ -305,7 +312,7 @@ public sealed class TrayApp : IDisposable
         }
 
         var trayId = _registry.TrayStationId;
-        return [.. ordered.Select(h => new StationSection(h.Entry.Id, h.Entry.Profile!, View(h), h.Snapshot, h.Entry.Id == trayId, ordered.Count > 1))];
+        return [.. ordered.Select(h => new StationSection(h.Entry.Id, h.Entry.Profile!, View(h), h.Snapshot, h.Entry.Id == trayId, ordered.Count > 1, h.ToEmpty(), h.ToFull()))];
     }
 
     private void ToggleFlyout()
@@ -560,9 +567,11 @@ public sealed class TrayApp : IDisposable
 
         public StationMonitor Monitor { get; } = monitor;
 
-        public RuntimeEstimator Estimator { get; } = new(TimeProvider.System, entry.Profile!.NominalCapacityWh);
+        public RuntimeEstimator Estimator { get; } = new(TimeProvider.System, entry.Profile!);
 
         public AlertMonitor Alerts { get; } = new(TimeProvider.System) { LowPercent = lowPercent };
+
+        public EnergyLog Energy { get; } = new(TimeProvider.System);
 
         public MonitorSnapshot Snapshot { get; set; } = MonitorSnapshot.Initial;
 
@@ -570,8 +579,11 @@ public sealed class TrayApp : IDisposable
 
         public DateTimeOffset AdvertisedAt { get; set; }
 
-        public TimeSpan? Runtime() =>
-            Snapshot.HasData ? Estimator.Estimate(Snapshot.Telemetry!, PowerReading.From(Snapshot.Telemetry!)) : null;
+        public TimeEstimate? ToEmpty() =>
+            Snapshot.HasData ? Estimator.EstimateToEmpty(Snapshot.Telemetry!, PowerReading.From(Snapshot.Telemetry!)) : null;
+
+        public TimeEstimate? ToFull() =>
+            Snapshot.HasData ? Estimator.EstimateToFull(Snapshot.Telemetry!, PowerReading.From(Snapshot.Telemetry!)) : null;
 
         public void Start() => _run = Task.Run(() => Monitor.RunAsync(_stop.Token));
 

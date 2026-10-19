@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Upsy.Core.Link;
+using Upsy.Core.Power;
 using Upsy.Core.Presentation;
 using Upsy.Core.Station;
 using Upsy.Dialogs;
@@ -122,8 +123,10 @@ public static class Program
         var d2 = new StationContext("DELTA 2", StationCatalog.Delta2);
         var d2Level = d2 with { AdvertisedPercent = 84 };
 
-        StationSection Section(string id, StationContext ctx, MonitorSnapshot snapshot, TimeSpan? runtime, bool tray, bool several) =>
-            new(id, ctx.Profile, StatusText.Build(snapshot, runtime, 20, ctx), snapshot, tray, several);
+        StationSection Section(string id, StationContext ctx, MonitorSnapshot snapshot, TimeEstimate? toEmpty, TimeEstimate? toFull, bool tray, bool several) =>
+            new(id, ctx.Profile, StatusText.Build(snapshot, toEmpty, toFull, 20, ctx), snapshot, tray, several, toEmpty, toFull);
+        static TimeEstimate Estimated(int minutes) => new(TimeSpan.FromMinutes(minutes), FromStation: false);
+        static TimeEstimate FromStation(int minutes) => new(TimeSpan.FromMinutes(minutes), FromStation: true);
         MonitorSnapshot Eb3a(Telemetry t) => new(LinkStatus.Connected, t, eb3aId, eb3aSettings, now, now, null);
         MonitorSnapshot D2(Telemetry t) => new(LinkStatus.Connected, t, d2Id, d2Settings, now, now, null);
         MonitorSnapshot Status(LinkStatus status, StationIdentity? id = null) =>
@@ -134,21 +137,21 @@ public static class Program
         var eb3aBattery = new Telemetry(58, 0, 0, 128, 0, true, false, 2.6, 0);
         return
         [
-            ("battery", [Section("eb3a", eb3a, Eb3a(eb3aBattery), TimeSpan.FromMinutes(62), true, false)], null),
-            ("low", [Section("eb3a", eb3a, Eb3a(new(18, 0, 0, 131, 0, true, false, 2.6, 0)), TimeSpan.FromMinutes(21), true, false)], null),
-            ("charging", [Section("eb3a", eb3a, Eb3a(new(54, 0, 390, 126, 0, true, false, 228.4, 0)), null, true, false)], "eb3a"),
-            ("full", [Section("eb3a", eb3a, Eb3a(new(100, 0, 126, 126, 0, true, false, 228.3, 0)), null, true, false)], null),
-            ("bluetooth-off", [Section("eb3a", eb3a, Status(LinkStatus.BluetoothOff, eb3aId), null, true, false)], null),
-            ("paused", [Section("eb3a", eb3a, Status(LinkStatus.Paused, eb3aId), null, true, false)], null),
+            ("battery", [Section("eb3a", eb3a, Eb3a(eb3aBattery), Estimated(62), null, true, false)], null),
+            ("low", [Section("eb3a", eb3a, Eb3a(new(18, 0, 0, 131, 0, true, false, 2.6, 0)), Estimated(21), null, true, false)], null),
+            ("charging", [Section("eb3a", eb3a, Eb3a(new(54, 0, 390, 126, 0, true, false, 228.4, 0)), null, Estimated(37), true, false)], "eb3a"),
+            ("full", [Section("eb3a", eb3a, Eb3a(new(100, 0, 126, 126, 0, true, false, 228.3, 0)), null, null, true, false)], null),
+            ("bluetooth-off", [Section("eb3a", eb3a, Status(LinkStatus.BluetoothOff, eb3aId), null, null, true, false)], null),
+            ("paused", [Section("eb3a", eb3a, Status(LinkStatus.Paused, eb3aId), null, null, true, false)], null),
             ("first-start", [new("first", StationCatalog.Eb3a, StatusText.FirstStart(), MonitorSnapshot.Initial, true, false)], null),
-            ("two", [Section("eb3a", eb3a, Eb3a(new(100, 0, 46, 46, 0, true, false, 228, 0)), null, true, true),
-                Section("d2", d2, D2(d2Battery), TimeSpan.FromMinutes(431), false, true)], null),
-            ("two-delta2", [Section("d2", d2, D2(d2Charging), null, true, true),
-                Section("eb3a", eb3a, Eb3a(eb3aBattery), TimeSpan.FromMinutes(62), false, true)], "d2"),
-            ("level-signin", [Section("d2", d2Level, Status(LinkStatus.SignInNeeded), null, true, false)], null),
-            ("level-rejected", [Section("d2", d2Level, Status(LinkStatus.KeyRejected), null, true, false)], null),
-            ("level-keytable", [Section("d2", d2Level, Status(LinkStatus.KeyTableMissing), null, true, false)], null),
-            ("level-busy", [Section("d2", d2Level, Status(LinkStatus.Searching) with { Failures = StatusText.BusyAfterFailures }, null, true, false)], null),
+            ("two", [Section("eb3a", eb3a, Eb3a(new(100, 0, 46, 46, 0, true, false, 228, 0)), null, null, true, true),
+                Section("d2", d2, D2(d2Battery), FromStation(431), null, false, true)], null),
+            ("two-delta2", [Section("d2", d2, D2(d2Charging), null, FromStation(73), true, true),
+                Section("eb3a", eb3a, Eb3a(eb3aBattery), Estimated(62), null, false, true)], "d2"),
+            ("level-signin", [Section("d2", d2Level, Status(LinkStatus.SignInNeeded), null, null, true, false)], null),
+            ("level-rejected", [Section("d2", d2Level, Status(LinkStatus.KeyRejected), null, null, true, false)], null),
+            ("level-keytable", [Section("d2", d2Level, Status(LinkStatus.KeyTableMissing), null, null, true, false)], null),
+            ("level-busy", [Section("d2", d2Level, Status(LinkStatus.Searching) with { Failures = StatusText.BusyAfterFailures }, null, null, true, false)], null),
         ];
     }
 
