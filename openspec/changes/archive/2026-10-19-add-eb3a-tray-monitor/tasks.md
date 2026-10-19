@@ -49,5 +49,5 @@
 ## 7. Docs and end-to-end validation
 
 - [x] 7.1 Write README.md (what, screenshots, install/run, how it works, registers, development, troubleshooting, roadmap); verify every command in it runs
-- [ ] 7.2 Owner: run against the real EB3A, unplug and replug mains, toggle AC/DC outputs, sleep the PC, switch the station's Bluetooth off and on; verify icon, tooltip, flyout and notifications follow the state changes
+- [ ] 7.2 Owner: run against the real EB3A, unplug and replug mains, toggle AC/DC outputs, sleep the PC, switch the station's Bluetooth off and on; verify icon, tooltip, flyout and notifications follow the state changes (mains unplug/replug done twice on 2026-10-12, 100% to 92% over 9 min, MainsLost and MainsRestored alerts raised each time per upsy.log; output toggles, sleep and station Bluetooth toggle not yet run)
 - [ ] 7.3 Owner: leave the app running for several hours on battery and on mains, verify the link stays up or recovers, log a discharge to calibrate the `usable` factor, and record phone-app coexistence and Do Not Disturb behaviour in the README

@@ -124,7 +124,7 @@ Design decisions live in [DESIGN.md](DESIGN.md) and [design/upsy.design.html](de
 
 ## Status and roadmap
 
-Phase 1 works end to end against a real EB3A: discovery without pairing, live telemetry, identity and settings, tray icon, flyout, menu, notifications. Still to verify on hardware over long runs: hours-long link stability, mains unplug/replug notifications, phone-app coexistence. The runtime estimate's 0.85 factor is to be calibrated from a logged discharge.
+Phase 1 works end to end against a real EB3A: discovery without pairing, live telemetry, identity and settings, tray icon, flyout, menu, notifications. Mains unplug and replug raise the expected alerts. Still to verify on hardware: hours-long link stability, recovery after sleep and after toggling Bluetooth on the PC or the station, handing the link to the phone app with Pause, and how toasts behave under Do Not Disturb. The runtime estimate's 0.85 factor is to be calibrated from a logged discharge.
 
 Later: hibernate or shut down the PC at critical charge, other Bluetti models.
 
