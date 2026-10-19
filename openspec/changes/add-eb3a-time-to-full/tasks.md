@@ -26,4 +26,4 @@
 
 - [ ] 3.1 Owner: run the EB3A on battery from 100% to about 40% with the boiler as usual, then charge it back to 100%, upsy running; verify the log holds both runs
 - [ ] 3.2 Run the tool, set the EB3A `UsableFactor` and `ChargeEfficiency`, and record the run (Δ%, Wh, spread) in this design; verify the next estimates match the observed times within about 10%
-- [ ] 3.3 Update README (EB3A time to full, station versus estimated wording, the energy log and the tool), install the new build, and run the quality gate (Release build with 0 warnings, tests, format check, `openspec validate --strict`)
+- [x] 3.3 Update README (EB3A time to full, station versus estimated wording, the energy log and the tool), install the new build, and run the quality gate (Release build with 0 warnings, tests, format check, `openspec validate --strict`)
