@@ -1,8 +1,9 @@
 schema: spec-driven
 
 context: |
-  Product: `upsy`, a Windows tray app that reads a Bluetti EB3A power station over Bluetooth LE
-  (read-only Modbus) and shows battery, runtime, charging and mains state, with alerts.
+  Product: `upsy`, a Windows tray app that reads portable power stations (Bluetti EB3A via Modbus,
+  EcoFlow DELTA 2 via its encrypted session) over Bluetooth LE, read-only, and shows battery, runtime,
+  charging and mains state for each, with alerts. Several stations at once; the tray shows a chosen one.
   Product truth lives in PRODUCT.md; visual decisions in DESIGN.md; mock-ups in design/*.html.
 
   Stack:
@@ -22,7 +23,9 @@ context: |
   - async all the way; CancellationToken on every long-running loop; ConfigureAwait(false) in Core.
   - Records for immutable data (Telemetry, StationSettings); sealed classes by default.
   - Register addresses, scales and thresholds are named constants next to the code that uses them.
-  - Never write station registers (only Modbus function 0x03).
+  - Read-only towards stations: Modbus function 0x03 only for Bluetti, only the session/auth messages for
+    EcoFlow; never a command that changes an output or a setting.
+  - No PII in tracked files: placeholder serials and addresses only; real ones stay in local/.
   - Commits follow Conventional Commits.
 
   Quality gate (must pass before a task is marked done):
@@ -49,7 +52,7 @@ operations:
   apply:
     guidance:
       - Run the quality gate (build with 0 warnings, test, format check) after each task group.
-      - Hardware-dependent verification runs against the real EB3A only when it is in range; otherwise mark it pending in the summary, never as done.
+      - Hardware-dependent verification runs against the real station only when it is in range; otherwise mark it pending in the summary, never as done.
       - Keep the UI faithful to the accepted design mock-up; update the mock-up first if the UI must change.
   archive:
     guidance:

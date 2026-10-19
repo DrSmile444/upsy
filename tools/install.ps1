@@ -5,7 +5,8 @@
 .DESCRIPTION
     Publishes src/Upsy (Release, single file, framework-dependent) into
     %LOCALAPPDATA%\Programs\upsy, adds a Start menu shortcut and an entry in
-    Settings > Apps, and starts it. No admin rights needed. Settings in
+    Settings > Apps, fetches the EcoFlow key table when it is missing, and
+    starts it. No admin rights needed. Settings in
     %APPDATA%\upsy are kept on reinstall and on uninstall.
 
     If "Start with Windows" is on, the autostart entry is pointed at the
@@ -101,6 +102,14 @@ Set-ItemProperty $UninstallKey -Name EstimatedSize -Value ([int]($size / 1KB)) -
 # Autostart stores the exe path; move an existing entry from a build folder to the installed copy.
 if ((Get-ItemProperty $RunKey -ErrorAction SilentlyContinue).$Name) {
     Set-ItemProperty $RunKey -Name $Name -Value "`"$Exe`""
+}
+
+# EcoFlow stations need the key table; it is fetched once from a pinned upstream commit and never kept in the repo.
+try {
+    & (Join-Path $PSScriptRoot 'get-ecoflow-keydata.ps1')
+}
+catch {
+    Write-Warning "EcoFlow key table not installed ($($_.Exception.Message)). Bluetti stations work; run tools/get-ecoflow-keydata.ps1 later for EcoFlow."
 }
 
 Write-Host "$Name $version installed to $InstallDir"

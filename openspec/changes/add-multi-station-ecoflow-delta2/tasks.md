@@ -61,13 +61,13 @@
 ## 6. Docs and tooling
 
 - [ ] 6.1 `install.ps1` fetches the key table when missing; verify a fresh install on this PC ends with the key table present and both stations connected
-- [ ] 6.2 Add `THIRD-PARTY-NOTICES.md` (ha-ef-ble, Apache-2.0) and source headers on ported EcoFlow files; verify every EcoFlow protocol file has the header
-- [ ] 6.3 Update README (supported stations, EcoFlow sign-in and key table, rebind tip for wrong key, DELTA 2 fields, screenshots), CLAUDE.md (layout, EcoFlow notes) and DESIGN.md; verify the README commands run
-- [ ] 6.4 Run the quality gate (Release build with 0 warnings, tests, format check, `openspec validate --strict`); verify all pass
+- [x] 6.2 Add `THIRD-PARTY-NOTICES.md` (ha-ef-ble, Apache-2.0) and source headers on ported EcoFlow files; verify every EcoFlow protocol file has the header
+- [x] 6.3 Update README (supported stations, EcoFlow sign-in and key table, rebind tip for wrong key, DELTA 2 fields, screenshots), CLAUDE.md (layout, EcoFlow notes) and DESIGN.md; verify the README commands run
+- [x] 6.4 Run the quality gate (Release build with 0 warnings, tests, format check, `openspec validate --strict`); verify all pass
 
 ## 7. Hardware checks (owner, real stations)
 
-- [ ] 7.1 Upgrade the installed copy: verify the EB3A carries over from v1 settings without a new scan, and threshold and autostart are unchanged
+- [x] 7.1 Upgrade the installed copy: verify the EB3A carries over from v1 settings without a new scan, and threshold and autostart are unchanged (2026-10-19: settings migrated to v2 with the EB3A as tray station, 20% kept, settings.v1.json kept, EB3A reconnected by address; reinstalled copy connected too)
 - [ ] 7.2 DELTA 2 on mains: unplug for more than 5 s and plug back; verify the mains lost and mains restored notifications name DELTA 2 and the EB3A is unaffected
 - [ ] 7.3 DELTA 2 DC load: plug a phone into USB and a 12 V device into the car port; verify DC output watts and flags match the station screen (confirms the port-watt offsets)
 - [ ] 7.4 Pause the DELTA 2, open the EcoFlow app on the phone, then resume; verify the hand-over works while the EB3A stays connected, and the advertised level shows while paused if the station still advertises
