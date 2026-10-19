@@ -358,7 +358,8 @@ board('Tray icon', 'The number is the battery percentage, drawn at the small-ico
 
 /* 2. Tooltip ----------------------------------------------------------------------------- */
 board('Tooltip', 'One line, under the 127-character limit: model, percentage, then what matters now. Hovering the icon shows it after the usual Windows delay.', () => `
-  <figure><span class="tooltip">EB3A · 58% · 128 W out · about 1 h left</span><div class="cap">On battery</div></figure>
+  <figure><span class="tooltip">EB3A · 58% · 128 W out · about 1 h left (estimated)</span><div class="cap">On battery, upsy&rsquo;s estimate</div></figure>
+  <figure><span class="tooltip">DELTA 2 · 82% · 103 W out · 7 h 11 min left</span><div class="cap">On battery, the station&rsquo;s own time</div></figure>
   <figure><span class="tooltip">EB3A · 54% · charging +264 W</span><div class="cap">Charging on mains</div></figure>
   <figure><span class="tooltip">EB3A · 100% · on mains</span><div class="cap">Full on mains</div></figure>
   <figure><span class="tooltip">upsy · Bluetooth is off</span><div class="cap">No data (reason in words)</div></figure>
@@ -377,6 +378,7 @@ const DETAILS = (open) => `<div class="expander"><div class="head"><span>Details
   <dt>DC output</dt><dd>Off · 0 W</dd>
   <dt>Battery net</dt><dd>+264 W</dd>
   <dt>Load present</dt><dd>Yes</dd>
+  <dt>Full in</dt><dd>About 35 min (estimated)</dd>
   <dt class="grp">Station</dt>
   <dt>Charging mode</dt><dd>Standard</dd>
   <dt>ECO mode</dt><dd>On · off after 1 h at ≤10 W</dd>
@@ -400,14 +402,14 @@ const FLY = (o) => `<div class="flyout" role="dialog" aria-label="upsy">
   ${o.details !== undefined ? DETAILS(o.details) : ''}
   ${FOOT(o.paused)}</div>`;
 
-board('Flyout: on battery', 'Left-click the icon. The station glyph is the owner&rsquo;s own outline of the EB3A: the half ring on its screen fills to the charge level, the outputs that are switched on are highlighted, an input that is feeding power turns green, and the light lights up when it is on. Runtime is always "about" and rounded (5 min under an hour, 10 min above), never a precise clock.', () => `
-  <figure>${FLY({ model: 'EB3A · on battery', pct: 58, status: 'About 1 h left', icon: '&#xE83F;', sub: 'At the current 128 W load',
+board('Flyout: on battery', 'Left-click the icon. The station glyph is the owner&rsquo;s own outline of the EB3A: the half ring on its screen fills to the charge level, the outputs that are switched on are highlighted, an input that is feeding power turns green, and the light lights up when it is on. A time the station reports (DELTA 2) is shown as reported, to the minute. A time upsy works out itself (EB3A) says "about", is rounded (5 min under an hour, 10 min above) and is marked estimated.', () => `
+  <figure>${FLY({ model: 'EB3A · on battery', pct: 58, status: 'About 1 h left', icon: '&#xE83F;', sub: 'Estimated at the current 128 W load',
     st: { pct: 58, acOut: 1 }, flows: ['0 W', '128 W'], details: false })}<div class="cap">Default view. Details collapsed.</div></figure>
   <figure>${FLY({ model: 'EB3A · on battery', pct: 18, status: 'Low · about 20 min left', icon: '&#xE7BA;', cls: 'caution', sub: 'Save your work. Alert threshold is 20%.',
     st: { pct: 18, acOut: 1, lvl: 'caution' }, flows: ['0 W', '131 W'], details: false })}<div class="cap">At or below the threshold: amber, with a plain instruction.</div></figure>`);
 
 board('Flyout: on mains', 'Plugged in, the main line says what the battery is doing and the flow strip shows mains passing through to the load.', () => `
-  <figure>${FLY({ model: 'EB3A · on mains', pct: 54, status: 'Charging · +264 W', icon: '&#xE83E;', cls: 'ok', sub: 'Mains 228 V',
+  <figure>${FLY({ model: 'EB3A · on mains', pct: 54, status: 'Charging · +264 W', icon: '&#xE83E;', cls: 'ok', sub: 'Full in about 35 min, estimated · mains 228 V',
     st: { pct: 54, acOut: 1, acIn: 1, lvl: 'ok' }, flows: ['390 W', '126 W'], details: true })}<div class="cap">Charging, Details expanded: every value the station reports, grouped.</div></figure>
   <figure>${FLY({ model: 'EB3A · on mains', pct: 100, status: 'Full', icon: '&#xE83F;', sub: 'Mains 228 V · passing 126 W to the load',
     st: { pct: 100, acOut: 1, acIn: 1 }, flows: ['126 W', '126 W'], details: false })}<div class="cap">Full on mains (UPS bypass).</div></figure>`);
@@ -450,7 +452,7 @@ const D2_DETAILS = `<div class="expander"><div class="head"><span>Details</span>
   <dt>USB and 12 V output</dt><dd>Off · 0 W</dd>
   <dt>Battery net</dt><dd>+227 W</dd>
   <dt>Load present</dt><dd>Yes</dd>
-  <dt>Full in</dt><dd>About 1 h 10 min (station)</dd>
+  <dt>Full in</dt><dd>1 h 13 min (station)</dd>
   <dt class="grp">Station</dt>
   <dt>Charge limit</dt><dd>100%</dd>
   <dt>Discharge limit</dt><dd>0%</dd>
@@ -464,14 +466,14 @@ const D2_DETAILS = `<div class="expander"><div class="head"><span>Details</span>
   </dl></div>`;
 const EB3A_FULL = { name: 'EB3A', model: 'EB3A · on mains', pct: 100, status: 'Full', icon: '&#xE83F;', sub: 'Mains 228 V · passing 46 W to the load',
   st: { pct: 100, acOut: 1, acIn: 1 }, flows: ['46 W', '46 W'], details: false };
-const D2_BATT = { name: 'DELTA 2', glyph: 'delta2', model: 'DELTA 2 · on battery', pct: 82, status: 'About 7 h 10 min left', icon: '&#xE83F;', sub: 'At the current 103 W load',
+const D2_BATT = { name: 'DELTA 2', glyph: 'delta2', model: 'DELTA 2 · on battery', pct: 82, status: '7 h 11 min left', icon: '&#xE83F;', sub: 'At the current 103 W load · from the station',
   st: { pct: 82 }, flows: ['0 W', '103 W'], details: false };
 
 board('Flyout: two stations', 'With more than one station the flyout stacks one section per station, the tray station first (marked with a pin). Each section is the single-station layout with its own Details and a More button for that station. The footer keeps the brand, Add station and the app menu. With one station the flyout is unchanged.', () => `
   <figure>${FLYM(SEC({ ...EB3A_FULL, tray: true }), SEC(D2_BATT))}<div class="cap">EB3A in the tray, DELTA 2 on battery with the station&rsquo;s own runtime.</div></figure>
-  <figure>${FLYM(SEC({ ...D2_BATT, tray: true, model: 'DELTA 2 · on mains', pct: 80, status: 'Charging · +227 W', icon: '&#xE83E;', cls: 'ok', sub: 'Full in about 1 h 10 min · mains 233 V',
+  <figure>${FLYM(SEC({ ...D2_BATT, tray: true, model: 'DELTA 2 · on mains', pct: 80, status: 'Charging · +227 W', icon: '&#xE83E;', cls: 'ok', sub: 'Full in 1 h 13 min · mains 233 V',
       st: { pct: 80, lvl: 'ok' }, flows: ['328 W', '101 W'], details: true, detailsHtml: D2_DETAILS }),
-    SEC({ ...EB3A_FULL, model: 'EB3A · on battery', pct: 58, status: 'About 1 h left', sub: 'At the current 128 W load', st: { pct: 58, acOut: 1 }, flows: ['0 W', '128 W'] }))}
+    SEC({ ...EB3A_FULL, model: 'EB3A · on battery', pct: 58, status: 'About 1 h left', sub: 'Estimated at the current 128 W load', st: { pct: 58, acOut: 1 }, flows: ['0 W', '128 W'] }))}
     <div class="cap">DELTA 2 chosen for the tray and charging, Details expanded: its fields, settings and identity. Its AC outlets are at the back, so the In/Out strip carries AC.</div></figure>
   <figure style="display:flex; flex-direction:column; gap:8px"><div class="menu" style="width:264px">
     <div class="item title">DELTA 2 · 82% · on battery</div>
@@ -566,10 +568,10 @@ board('Context menu: several stations', 'With two or more stations the menu adds
 const TOAST = (h, p, mascot) => `<div class="toast"><div class="app"><img src="../assets/brand/upsy-icon.svg" alt="">upsy<span class="x">&#xE8BB;</span></div>
   <div class="body"><img src="../assets/brand/${mascot}" alt=""><div><h4>${h}</h4><p>${p}</p></div></div></div>`;
 board('Notifications', 'Windows toasts from the tray icon. Title names the station and what happened, body says what it means now; each station alerts on its own. Each fires once per event (debounced 5 s for mains). Low fires at the user threshold, critical once more at 10%.', () => `
-  <figure>${TOAST('EB3A: mains power lost', 'On battery at 92%, about 1 h 40 min at 128 W.', 'upsy-icon.svg')}</figure>
-  <figure>${TOAST('EB3A: battery low, 20%', 'About 20 min left at 131 W. Save your work.', 'upsy-icon.svg')}</figure>
-  <figure>${TOAST('DELTA 2: battery critical, 10%', 'About 50 min left at 103 W. Shut down or hibernate now.', 'upsy-icon.svg')}</figure>
-  <figure>${TOAST('DELTA 2: mains power is back', 'Charging at 61%, full in about 1 h 30 min.', 'upsy-icon.svg')}</figure>`);
+  <figure>${TOAST('EB3A: mains power lost', 'On battery at 92%, about 1 h 40 min at 128 W (estimated).', 'upsy-icon.svg')}</figure>
+  <figure>${TOAST('EB3A: battery low, 20%', 'About 20 min left at 131 W (estimated). Save your work.', 'upsy-icon.svg')}</figure>
+  <figure>${TOAST('DELTA 2: battery critical, 10%', '48 min left at 103 W. Shut down or hibernate now.', 'upsy-icon.svg')}</figure>
+  <figure>${TOAST('DELTA 2: mains power is back', 'Charging at 61%, full in 1 h 28 min.', 'upsy-icon.svg')}</figure>`);
 
 /* 6. Brand ------------------------------------------------------------------------------- */
 const brand = document.createElement('section');

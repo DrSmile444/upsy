@@ -61,4 +61,4 @@ EB3A live parts: the half ring on the station screen fills to the battery level 
 
 ## Copy rules
 
-Plain, calm, specific. Runtime always "about", rounded to 5 min under an hour and 10 min above. Never show stale numbers; say why there is no data and what to do.
+Plain, calm, specific. Say where a time comes from: a time the station reports (DELTA 2) is shown as reported, to the minute ("7 h 11 min left", Details "1 h 13 min (station)"); a time upsy estimates (EB3A) says "about", is rounded to 5 min under an hour and 10 min above, and is marked "estimated" in the line under the status, the Details row, the tooltip and notifications ("Full in about 35 min, estimated", "about 1 h left (estimated)"). Never show stale numbers; say why there is no data and what to do.
