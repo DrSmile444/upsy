@@ -1,0 +1,35 @@
+<local:DialogWindow x:Class="Upsy.Dialogs.ConfirmWindow"
+                    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:Upsy.Dialogs"
+                    Width="432">
+  <Window.Resources>
+    <ResourceDictionary Source="/upsy;component/Flyout/FlyoutStyles.xaml" />
+  </Window.Resources>
+  <!-- design/upsy.design.html #multi: "Forget DELTA 2?" -->
+  <Border Margin="16" CornerRadius="8" BorderThickness="1" Background="{DynamicResource Flyout}" BorderBrush="{DynamicResource FlyoutStroke}">
+    <Border.Effect>
+      <DropShadowEffect BlurRadius="16" ShadowDepth="6" Direction="270" Opacity="0.22" />
+    </Border.Effect>
+    <DockPanel>
+      <DockPanel DockPanel.Dock="Top" Height="32" Background="Transparent" MouseDown="OnTitleBarMouseDown">
+        <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Width="46" FontSize="10" Content="&#xE8BB;" Click="OnCloseButton"
+                AutomationProperties.Name="Close" />
+        <Image Source="/upsy;component/Assets/upsy-256.png" Width="16" Height="16" Margin="12,0,8,0" />
+        <TextBlock Text="upsy" FontSize="12" Foreground="{DynamicResource Ink}" VerticalAlignment="Center" />
+      </DockPanel>
+      <Border DockPanel.Dock="Bottom" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource Divider}" Background="{DynamicResource FooterTint}"
+              CornerRadius="0,0,8,8" Padding="24,16">
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+          <Button x:Name="CancelButton" Style="{StaticResource DialogButton}" Content="Cancel" IsCancel="True" IsDefault="True" Click="OnCloseButton" Margin="0,0,8,0" />
+          <Button x:Name="ConfirmButton" Style="{StaticResource DialogAccentButton}" Click="OnConfirm" />
+        </StackPanel>
+      </Border>
+      <StackPanel Margin="24,12,24,20">
+        <TextBlock x:Name="Heading" FontFamily="Segoe UI Variable Display, Segoe UI" FontSize="20" FontWeight="SemiBold"
+                   Foreground="{DynamicResource Ink}" Margin="0,0,0,6" />
+        <TextBlock x:Name="Body" TextWrapping="Wrap" Foreground="{DynamicResource Ink2}" />
+      </StackPanel>
+    </DockPanel>
+  </Border>
+</local:DialogWindow>

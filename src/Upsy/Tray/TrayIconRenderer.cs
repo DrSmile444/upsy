@@ -14,7 +14,8 @@ public enum TrayGlyph
     Paused,
 }
 
-public sealed record TrayIconState(TrayGlyph Glyph, int Percent, Tone Tone, bool Charging);
+/// <param name="LevelOnly">The level comes from an EcoFlow advertisement: drawn over a dotted bar, so it differs by shape, not only colour.</param>
+public sealed record TrayIconState(TrayGlyph Glyph, int Percent, Tone Tone, bool Charging, bool LevelOnly = false);
 
 /// <summary>Draws the notification-area icon (DESIGN.md "Tray icon") for the current taskbar theme and size.</summary>
 public static partial class TrayIconRenderer
@@ -71,7 +72,15 @@ public static partial class TrayIconRenderer
                 };
                 DrawDigits(g, state.Percent.ToString(System.Globalization.CultureInfo.InvariantCulture), size, k, color);
                 var bar = state.Tone is Tone.Caution or Tone.Critical ? color : state.Charging ? Ok(lightTaskbar) : Color.Empty;
-                if (!bar.IsEmpty)
+                if (state.LevelOnly)
+                {
+                    using var dots = new SolidBrush(ink);
+                    foreach (var x in new[] { 1, 5, 9, 13 })
+                    {
+                        g.FillRectangle(dots, x * k, 14 * k, 2 * k, 2 * k);
+                    }
+                }
+                else if (!bar.IsEmpty)
                 {
                     using var brush = new SolidBrush(bar);
                     using var path = RoundedRect(new RectangleF(1 * k, 14 * k, 14 * k, 2 * k), 1 * k);

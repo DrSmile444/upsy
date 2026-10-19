@@ -1,5 +1,7 @@
+using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Channels;
 using Upsy.Core.Link;
-using Upsy.Core.Protocol;
+using Upsy.Core.Station;
 using Upsy.Infrastructure;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.Advertisement;
@@ -10,15 +12,9 @@ using RadioState = Upsy.Core.Link.RadioState;
 
 namespace Upsy.Ble;
 
-/// <summary>Bluetooth LE transport over WinRT: scan by name, connect unpaired, Modbus over ff02/ff01.</summary>
+/// <summary>Bluetooth LE over WinRT: connects unpaired by address and opens the model's GATT service as a byte channel.</summary>
 public sealed class WinRtStationTransport : IStationTransport
 {
-    public const string NamePrefix = "EB3A";
-    public static readonly Guid ServiceUuid = Guid.Parse("0000ff00-0000-1000-8000-00805f9b34fb");
-    public static readonly Guid NotifyUuid = Guid.Parse("0000ff01-0000-1000-8000-00805f9b34fb");
-    public static readonly Guid WriteUuid = Guid.Parse("0000ff02-0000-1000-8000-00805f9b34fb");
-    private static readonly TimeSpan ScanWindow = TimeSpan.FromSeconds(10);
-
     public async Task<RadioState> GetRadioStateAsync(CancellationToken ct)
     {
         var radios = await Radio.GetRadiosAsync().AsTask(ct);
@@ -26,43 +22,9 @@ public sealed class WinRtStationTransport : IStationTransport
         return bt is null ? RadioState.Unavailable : bt.State == Windows.Devices.Radios.RadioState.On ? RadioState.On : RadioState.Off;
     }
 
-    public async Task<IStationSession?> ConnectAsync(ulong? knownAddress, CancellationToken ct)
+    public async Task<IGattChannel?> OpenAsync(ulong address, GattProfile profile, CancellationToken ct)
     {
-        if (knownAddress is { } known && await TryConnectAsync(known, ct) is { } direct)
-        {
-            return direct;
-        }
-
-        var found = await ScanAsync(ct);
-        return found is null ? null : await TryConnectAsync(found.Value, ct);
-    }
-
-    private static async Task<ulong?> ScanAsync(CancellationToken ct)
-    {
-        var result = new TaskCompletionSource<ulong>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var watcher = new BluetoothLEAdvertisementWatcher { ScanningMode = BluetoothLEScanningMode.Active };
-        watcher.Received += (_, e) =>
-        {
-            if (e.Advertisement.LocalName?.StartsWith(NamePrefix, StringComparison.Ordinal) == true)
-            {
-                result.TrySetResult(e.BluetoothAddress);
-            }
-        };
-        watcher.Start();
-        try
-        {
-            var winner = await Task.WhenAny(result.Task, Task.Delay(ScanWindow, ct));
-            ct.ThrowIfCancellationRequested();
-            return winner == result.Task ? result.Task.Result : null;
-        }
-        finally
-        {
-            watcher.Stop();
-        }
-    }
-
-    private static async Task<IStationSession?> TryConnectAsync(ulong address, CancellationToken ct)
-    {
+        ArgumentNullException.ThrowIfNull(profile);
         BluetoothLEDevice? device = null;
         try
         {
@@ -72,37 +34,40 @@ public sealed class WinRtStationTransport : IStationTransport
                 return null;
             }
 
-            // Connects can fail transiently right after the station wakes; one quick retry covers it.
+            // Connects can fail transiently right after the station wakes; one quick retry covers it. A DELTA 2 that just
+            // dropped a link returns no services for a while; the monitor's backoff handles that.
             for (var attempt = 0; attempt < 2; attempt++)
             {
-                var services = await device.GetGattServicesForUuidAsync(ServiceUuid, BluetoothCacheMode.Uncached).AsTask(ct);
+                var services = await device.GetGattServicesForUuidAsync(profile.Service, BluetoothCacheMode.Uncached).AsTask(ct);
                 if (services.Status == GattCommunicationStatus.Success && services.Services.Count > 0)
                 {
                     var service = services.Services[0];
                     var chars = await service.GetCharacteristicsAsync(BluetoothCacheMode.Uncached).AsTask(ct);
-                    var notify = chars.Characteristics.FirstOrDefault(c => c.Uuid == NotifyUuid);
-                    var write = chars.Characteristics.FirstOrDefault(c => c.Uuid == WriteUuid);
+                    var notify = chars.Characteristics.FirstOrDefault(c => c.Uuid == profile.Notify);
+                    var write = chars.Characteristics.FirstOrDefault(c => c.Uuid == profile.Write);
                     if (notify is null || write is null)
                     {
                         service.Dispose();
-                        return Fail(device);
+                        device.Dispose();
+                        return null;
                     }
 
-                    var session = new WinRtStationSession(device, service, notify, write);
-                    if (await session.SubscribeAsync(ct))
+                    var channel = new WinRtGattChannel(device, service, notify, write);
+                    if (await channel.SubscribeAsync(ct))
                     {
-                        device = null; // owned by the session now
-                        return session;
+                        device = null; // owned by the channel now
+                        return channel;
                     }
 
-                    await session.DisposeAsync();
+                    await channel.DisposeAsync();
                     return null;
                 }
 
                 await Task.Delay(TimeSpan.FromSeconds(1), ct);
             }
 
-            return Fail(device);
+            device.Dispose();
+            return null;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -111,38 +76,31 @@ public sealed class WinRtStationTransport : IStationTransport
             return null;
         }
     }
-
-    private static IStationSession? Fail(BluetoothLEDevice device)
-    {
-        device.Dispose();
-        return null;
-    }
 }
 
-internal sealed class WinRtStationSession : IStationSession
+internal sealed class WinRtGattChannel : IGattChannel
 {
-    private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(4);
     private readonly BluetoothLEDevice _device;
     private readonly GattDeviceService _service;
     private readonly GattCharacteristic _notify;
     private readonly GattCharacteristic _write;
-    private readonly SemaphoreSlim _sequential = new(1, 1);
-    private readonly FrameAssembler _assembler = new();
-    private readonly object _gate = new();
-    private TaskCompletionSource<byte[]>? _pending;
+    private readonly Channel<byte[]> _notifications = Channel.CreateUnbounded<byte[]>(new UnboundedChannelOptions { SingleReader = true });
 
-    public WinRtStationSession(BluetoothLEDevice device, GattDeviceService service, GattCharacteristic notify, GattCharacteristic write)
+    public WinRtGattChannel(BluetoothLEDevice device, GattDeviceService service, GattCharacteristic notify, GattCharacteristic write)
     {
         _device = device;
         _service = service;
         _notify = notify;
         _write = write;
         _notify.ValueChanged += OnValueChanged;
+        _device.ConnectionStatusChanged += OnConnectionStatusChanged;
     }
 
     public ulong Address => _device.BluetoothAddress;
 
     public bool IsConnected => _device.ConnectionStatus == BluetoothConnectionStatus.Connected;
+
+    public ChannelReader<byte[]> Notifications => _notifications.Reader;
 
     public async Task<bool> SubscribeAsync(CancellationToken ct)
     {
@@ -151,78 +109,100 @@ internal sealed class WinRtStationSession : IStationSession
         return status == GattCommunicationStatus.Success;
     }
 
-    public async Task<ushort[]?> ReadAsync(ushort start, ushort count, CancellationToken ct)
+    public async Task<bool> WriteAsync(ReadOnlyMemory<byte> data, bool withResponse, CancellationToken ct)
     {
-        await _sequential.WaitAsync(ct);
         try
         {
-            var pending = new TaskCompletionSource<byte[]>(TaskCreationOptions.RunContinuationsAsynchronously);
-            lock (_gate)
+            var result = await _write.WriteValueWithResultAsync(
+                data.ToArray().AsBuffer(),
+                withResponse ? GattWriteOption.WriteWithResponse : GattWriteOption.WriteWithoutResponse).AsTask(ct);
+            if (result.Status != GattCommunicationStatus.Success)
             {
-                _assembler.Reset();
-                _pending = pending;
+                Log.Warn($"write to {Address:X12}: {result.Status}");
+                return false;
             }
 
-            using var writer = new DataWriter();
-            writer.WriteBytes(Modbus.BuildReadRequest(start, count));
-            var status = await _write.WriteValueWithResultAsync(writer.DetachBuffer(), GattWriteOption.WriteWithoutResponse).AsTask(ct);
-            if (status.Status != GattCommunicationStatus.Success)
-            {
-                return null;
-            }
-
-            var done = await Task.WhenAny(pending.Task, Task.Delay(RequestTimeout, ct));
-            ct.ThrowIfCancellationRequested();
-            if (done != pending.Task)
-            {
-                Log.Warn($"read {start}+{count} timed out");
-                return null;
-            }
-
-            var result = Modbus.ParseReadResponse(pending.Task.Result, count);
-            if (!result.IsSuccess)
-            {
-                Log.Warn($"read {start}+{count}: {result.Error}");
-            }
-
-            return result.Registers;
+            return true;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            Log.Warn($"read {start}+{count} failed: {ex.Message}");
-            return null;
-        }
-        finally
-        {
-            lock (_gate)
-            {
-                _pending = null;
-            }
-
-            _sequential.Release();
+            Log.Warn($"write to {Address:X12} failed: {ex.Message}");
+            return false;
         }
     }
 
     public ValueTask DisposeAsync()
     {
         _notify.ValueChanged -= OnValueChanged;
+        _device.ConnectionStatusChanged -= OnConnectionStatusChanged;
+        _notifications.Writer.TryComplete();
         _service.Dispose();
         _device.Dispose();
-        _sequential.Dispose();
         return ValueTask.CompletedTask;
     }
 
-    private void OnValueChanged(GattCharacteristic sender, GattValueChangedEventArgs args)
+    private void OnValueChanged(GattCharacteristic sender, GattValueChangedEventArgs args) =>
+        _notifications.Writer.TryWrite(args.CharacteristicValue.ToArray());
+
+    private void OnConnectionStatusChanged(BluetoothLEDevice sender, object args)
     {
-        var reader = DataReader.FromBuffer(args.CharacteristicValue);
-        var bytes = new byte[reader.UnconsumedBufferLength];
-        reader.ReadBytes(bytes);
-        lock (_gate)
+        if (sender.ConnectionStatus == BluetoothConnectionStatus.Disconnected)
         {
-            if (_assembler.Append(bytes) is { } frame)
+            // Wake a driver waiting for notifications; it ends and the monitor reconnects.
+            _notifications.Writer.TryComplete();
+        }
+    }
+}
+
+/// <summary>The app's one BLE scanner (active scanning); every advertisement is raised as <see cref="Received"/>.</summary>
+public sealed class AdvertisementHub : IAdvertisementSource, IDisposable
+{
+    private readonly BluetoothLEAdvertisementWatcher _watcher = new() { ScanningMode = BluetoothLEScanningMode.Active };
+
+    public AdvertisementHub()
+    {
+        _watcher.Received += OnReceived;
+        _watcher.Stopped += (_, e) =>
+        {
+            if (e.Error != BluetoothError.Success)
             {
-                _pending?.TrySetResult(frame);
+                Log.Warn($"scanner stopped: {e.Error}");
+            }
+        };
+    }
+
+    public event EventHandler<Advertisement>? Received;
+
+    /// <summary>Starts scanning; harmless when it already runs. Call again after the radio comes back.</summary>
+    public void Start()
+    {
+        if (_watcher.Status != BluetoothLEAdvertisementWatcherStatus.Started)
+        {
+            try
+            {
+                _watcher.Start();
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or System.Runtime.InteropServices.COMException)
+            {
+                Log.Warn($"scanner did not start: {ex.Message}");
             }
         }
+    }
+
+    public void Dispose()
+    {
+        _watcher.Received -= OnReceived;
+        _watcher.Stop();
+    }
+
+    private void OnReceived(BluetoothLEAdvertisementWatcher sender, BluetoothLEAdvertisementReceivedEventArgs e)
+    {
+        var data = new Dictionary<ushort, byte[]>();
+        foreach (var m in e.Advertisement.ManufacturerData)
+        {
+            data[m.CompanyId] = m.Data.ToArray();
+        }
+
+        Received?.Invoke(this, new Advertisement(e.BluetoothAddress, string.IsNullOrEmpty(e.Advertisement.LocalName) ? null : e.Advertisement.LocalName, data, e.RawSignalStrengthInDBm));
     }
 }

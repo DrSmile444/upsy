@@ -1,7 +1,10 @@
 using System.Globalization;
 using System.IO;
+using System.Security.Cryptography;
 using System.Text.Json;
 using Microsoft.Win32;
+using Upsy.Core.Protocol.EcoFlow;
+using Upsy.Core.Settings;
 
 namespace Upsy.Infrastructure;
 
@@ -44,37 +47,86 @@ public static class Log
     }
 }
 
-public sealed record AppSettings(ulong? StationAddress = null, int LowPercent = 20);
-
-/// <summary>JSON settings in %APPDATA%\upsy\settings.json.</summary>
+/// <summary>settings.json in %APPDATA%\upsy (version 2, see Upsy.Core.Settings). A version 1 file is migrated once and kept as settings.v1.json.</summary>
 public static class SettingsStore
 {
-    private static readonly string FilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "upsy", "settings.json");
-    private static readonly JsonSerializerOptions Json = new() { WriteIndented = true };
+    private static readonly string Dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "upsy");
+    private static readonly string FilePath = Path.Combine(Dir, "settings.json");
 
-    public static AppSettings Load()
+    public static UpsySettings Load()
     {
         try
         {
-            return File.Exists(FilePath) ? JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(FilePath)) ?? new() : new();
+            var json = File.Exists(FilePath) ? File.ReadAllText(FilePath) : null;
+            var settings = SettingsCodec.Load(json, out var migrated);
+            if (migrated)
+            {
+                File.Copy(FilePath, Path.Combine(Dir, "settings.v1.json"), overwrite: true);
+                Save(settings);
+                Log.Info($"settings migrated to version {UpsySettings.CurrentVersion} ({settings.Stations.Count} station(s)); the old file is settings.v1.json");
+            }
+
+            return settings;
         }
-        catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException or InvalidOperationException)
         {
             Log.Warn($"settings unreadable, using defaults: {ex.Message}");
-            return new();
+            return UpsySettings.Empty;
         }
     }
 
-    public static void Save(AppSettings settings)
+    public static void Save(UpsySettings settings)
     {
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
-            File.WriteAllText(FilePath, JsonSerializer.Serialize(settings, Json));
+            Directory.CreateDirectory(Dir);
+            File.WriteAllText(FilePath, SettingsCodec.Save(settings));
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             Log.Warn($"settings not saved: {ex.Message}");
+        }
+    }
+}
+
+/// <summary>DPAPI for the current Windows user, with app-specific entropy: another account cannot read the EcoFlow user ID.</summary>
+public sealed class DpapiProtector : ISecretProtector
+{
+    private static readonly byte[] Entropy = "upsy.ecoflow.user-id"u8.ToArray();
+
+    public string Protect(string secret) =>
+        Convert.ToBase64String(ProtectedData.Protect(System.Text.Encoding.UTF8.GetBytes(secret), Entropy, DataProtectionScope.CurrentUser));
+
+    public string? Unprotect(string protectedSecret)
+    {
+        try
+        {
+            return System.Text.Encoding.UTF8.GetString(ProtectedData.Unprotect(Convert.FromBase64String(protectedSecret), Entropy, DataProtectionScope.CurrentUser));
+        }
+        catch (Exception ex) when (ex is CryptographicException or FormatException)
+        {
+            Log.Warn("the stored EcoFlow user ID cannot be read by this Windows account; sign in again");
+            return null;
+        }
+    }
+}
+
+/// <summary>The EcoFlow key table in %LOCALAPPDATA%\upsy (fetched by tools/get-ecoflow-keydata.ps1, never in the repo).</summary>
+public static class KeyTableStore
+{
+    public static readonly string FilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "upsy", "ecoflow-keydata.bin");
+
+    /// <summary>Null when the file is missing or is not the expected table.</summary>
+    public static EcoFlowKeyTable? Load()
+    {
+        try
+        {
+            return File.Exists(FilePath) ? EcoFlowKeyTable.FromBytes(File.ReadAllBytes(FilePath)) : null;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Log.Warn($"key table unreadable: {ex.Message}");
+            return null;
         }
     }
 }
