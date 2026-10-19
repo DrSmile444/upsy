@@ -8,7 +8,8 @@ context: |
   Stack:
   - .NET 10 LTS (SDK pinned in global.json), C# latest, TFM net10.0-windows10.0.19041.0.
   - WinRT Windows.Devices.Bluetooth directly (no BLE wrapper library).
-  - WinForms NotifyIcon for the tray, WPF for the flyout; no third-party UI, SVG or MVVM framework.
+  - WinForms NotifyIcon for the tray icon, WPF for the flyout and the context menu; no third-party UI,
+    SVG or MVVM framework.
   - Tests: xUnit v3 with plain Assert (no FluentAssertions); no hardware in unit tests.
   - Build settings are shared in Directory.Build.props, package versions in Directory.Packages.props
     (central package management); style in .editorconfig.
