@@ -121,6 +121,47 @@ section.board > p { margin: 0 0 20px; max-width: 80ch; color: var(--canvas-muted
 .iconbtn.hover { background: var(--subtle-hover); }
 .focus-ring { outline: 2px solid var(--focus); outline-offset: 1px; }
 
+/* ---------------- Several stations ---------------- */
+.glyph .lvl.muted { color: var(--ink-3); }
+.sec { position: relative; }
+.sec + .sec { border-top: 1px solid var(--divider); }
+.sec > .iconbtn.more { position: absolute; top: 8px; right: 8px; color: var(--ink-2); }
+.chip { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px; border-radius: 10px; font-size: 12px;
+  border: 1px solid var(--card-stroke); background: var(--card); color: var(--ink-2); vertical-align: middle; }
+.model .ico.pin { font-size: 12px; color: var(--ink-2); }
+.tooltip.multi { white-space: pre; line-height: 1.45; }
+
+/* ---------------- Small windows (sign-in, add station) ---------------- */
+.win { width: 400px; background: var(--flyout); color: var(--ink); border: 1px solid var(--flyout-stroke); border-radius: 8px;
+  box-shadow: var(--shadow); overflow: hidden; }
+.win .bar { height: 32px; display: flex; align-items: center; gap: 8px; padding: 0 0 0 12px; font-size: 12px; }
+.win .bar img { width: 16px; height: 16px; }
+.win .bar .x { margin-left: auto; width: 46px; height: 32px; display: grid; place-items: center; font-family: "Segoe Fluent Icons","Segoe MDL2 Assets"; font-size: 10px; }
+.win .body { padding: 12px 24px 20px; }
+.win h3 { margin: 0 0 6px; font: 600 20px/1.3 "Segoe UI Variable Display", "Segoe UI", sans-serif; }
+.win p { margin: 0 0 16px; font-size: 14px; color: var(--ink-2); }
+.win .actions { display: flex; gap: 8px; justify-content: flex-end; padding: 16px 24px; border-top: 1px solid var(--divider); background: rgba(127,127,127,.04); }
+.win .actions .btn { margin: 0; min-width: 96px; }
+.field { margin-bottom: 12px; }
+.field label { display: block; font-size: 14px; margin-bottom: 6px; }
+.field .input { height: 32px; border-radius: 4px; border: 1px solid var(--card-stroke); border-bottom: 1px solid var(--ink-2);
+  background: var(--card); padding: 0 10px; display: flex; align-items: center; font-size: 14px; color: var(--ink); }
+.field .input.focus { border-bottom: 2px solid var(--accent); }
+.field .input .ph { color: var(--ink-3); }
+.infobar { display: grid; grid-template-columns: 20px 1fr; gap: 8px; padding: 10px 12px; border-radius: 4px; font-size: 13px;
+  background: var(--card); border: 1px solid var(--card-stroke); margin-bottom: 12px; }
+.infobar .ico { color: var(--critical); font-size: 16px; }
+.infobar b { display: block; font-weight: 600; }
+.ring { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--divider); border-top-color: var(--accent); display: inline-block; vertical-align: -3px; }
+.list { border: 1px solid var(--card-stroke); border-radius: 6px; background: var(--card); }
+.list .row { display: grid; grid-template-columns: 32px 1fr auto; gap: 12px; align-items: center; padding: 10px 12px; }
+.list .row + .row { border-top: 1px solid var(--divider); }
+.list .row .ico { font-size: 20px; color: var(--ink-2); }
+.list .row b { display: block; font-weight: 600; font-size: 14px; }
+.list .row span.s { font-size: 12px; color: var(--ink-2); }
+.list .row .btn { margin: 0; }
+.list .empty { padding: 20px 12px; text-align: center; font-size: 13px; color: var(--ink-2); }
+
 /* ---------------- Menu ---------------- */
 .menu { width: 248px; background: var(--menu); color: var(--ink); border: 1px solid var(--flyout-stroke); border-radius: 8px; box-shadow: var(--shadow); padding: 4px; font-size: 14px; }
 .menu .item { height: 32px; display: grid; grid-template-columns: 24px 1fr auto; gap: 8px; align-items: center; padding: 0 10px; border-radius: 4px; }
@@ -170,7 +211,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
       <h1>upsy design</h1>
       <p>Mock-up of every surface of the upsy tray app, at real Windows 11 size, light theme left and dark theme right.
         All numbers are synthetic but shaped on real EB3A captures. This file is the reference the WPF build follows
-        (change <code>add-eb3a-tray-monitor</code>).</p>
+        (changes <code>add-eb3a-tray-monitor</code> and <code>add-multi-station-ecoflow-delta2</code>).</p>
     </div>
   </header>
   <div id="boards"></div>
@@ -235,6 +276,43 @@ const STATION = (s) => {
   return `<svg class="glyph" viewBox="0 0 800 740" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${svg}</svg>`;
 };
 
+// Generated glyph from assets/station/delta2.svg (owner's outline, tools/gen_station_glyph.py). Front view:
+// the live parts are the screen gauge and the USB panel (DC out); AC, 12 V and inputs are at the back.
+const DELTA2_BODY = `  <rect id="dc-pad" x="306" y="708" width="475" height="253" rx="31" fill="none" stroke="none"/>
+  <path d="M112 125Q112 108 140 103Q243 79 350 79H736Q844 79 947 103Q975 108 975 126V144C1000 146 1000 170 975 174C1000 177 1000 201 975 207C1000 210 1000 234 975 240C1000 243 1000 267 975 273C1000 276 1000 300 975 306C1000 309 1000 333 975 339C1000 342 1000 366 975 372C1000 375 1000 399 975 404V1257Q975 1324 919 1343Q871 1357 757 1357H329Q217 1357 169 1343Q112 1325 112 1257V404C87 402 87 378 111 372C87 369 87 345 111 339C87 336 87 312 111 306C87 303 87 279 111 273C87 270 87 246 111 240C87 237 87 213 111 207C87 204 87 180 111 174C87 171 87 147 111 144V125" stroke-width="30"/>
+  <path d="M150 102V411M310 83L335 215M936 102V411M776 83L751 215" stroke-width="20"/>
+  <path d="M232 1235V292Q233 271 258 258L334 217Q352 207 377 207H709Q733 207 752 217L828 258Q853 271 854 292V1235" stroke-width="24"/>
+  <path d="M390 303Q353 300 325 280Q302 263 325 247L342 237Q355 227 378 227H708Q731 227 745 237L762 247Q785 263 762 280Q734 300 696 303Z" stroke-width="20"/>
+  <path d="M113 415Q172 410 265 411M821 411Q913 410 974 415" stroke-width="20"/>
+  <path d="M113 1225Q167 1233 231 1235L241 1247V1265Q241 1310 275 1338Q295 1357 329 1357M231 1237H854M974 1225Q920 1233 855 1235L846 1247V1265Q846 1310 812 1338Q792 1357 757 1357" stroke-width="20"/>
+  <rect x="266" y="324" width="555" height="889" rx="65" stroke-width="24"/>
+  <rect x="330" y="398" width="425" height="206" rx="18" stroke-width="24"/>
+  <circle cx="543.5" cy="1111" r="44" stroke-width="20"/>
+  <rect x="496" y="926" width="95" height="45" rx="22.5" stroke-width="20"/>
+  <g id="dc">
+    <path d="M482 961H337Q306 961 306 930V740Q306 708 337 708H750Q781 708 781 740V930Q781 961 750 961H605" stroke-width="20"/>
+    <rect x="335" y="744" width="66" height="34" rx="4" stroke-width="20"/>
+    <rect x="448" y="744" width="66" height="34" rx="4" stroke-width="20"/>
+    <rect x="574" y="744" width="66" height="34" rx="4" stroke-width="20"/>
+    <rect x="687" y="744" width="65" height="34" rx="4" stroke-width="20"/>
+    <rect x="341" y="862" width="83" height="46" rx="23" stroke-width="20"/>
+    <rect x="663" y="862" width="83" height="46" rx="23" stroke-width="20"/>
+  </g>
+  <path id="gauge-track" d="M456.5 548 A86 86 0 0 1 628.5 548" stroke-width="26" opacity=".35"/>
+  <path id="gauge-value" d="M456.5 548 A86 86 0 0 1 628.5 548" stroke-width="26"/>`;
+const DELTA2 = (s) => {
+  // s: { pct, lvl: ''|'ok'|'caution'|'critical'|'muted', dcOut, off }
+  const t = Math.PI * (1 - Math.max(0, Math.min(100, s.pct ?? 0)) / 100);
+  const end = `${(542.5 + 86 * Math.cos(t)).toFixed(1)} ${(548 - 86 * Math.sin(t)).toFixed(1)}`;
+  let svg = DELTA2_BODY
+    .replace('id="dc-pad"', `id="dc-pad" class="pad ${s.dcOut ? 'on' : ''}"`)
+    .replace('<g id="dc">', `<g class="${s.dcOut ? 'on' : ''}">`)
+    .replace(/<path id="gauge-value"[^>]*>/, s.off ? '' : `<path class="lvl ${s.lvl || ''}" d="M456.5 548 A86 86 0 0 1 ${end}" stroke-width="26"/>`);
+  if (s.off) svg = svg.replace('id="gauge-track"', 'id="gauge-track" stroke-dasharray="12 26"');
+  return `<svg class="glyph" viewBox="62 54 962 1328" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${svg}</svg>`;
+};
+const GLYPH = (model, s) => (model === 'delta2' ? DELTA2(s) : STATION(s));
+
 // 16x16 tray icon. kind: num | full | off ; bar: ok | caution | critical | none
 const TRAY = (o) => {
   const ink = 'var(--taskbar-ink)';
@@ -245,13 +323,16 @@ const TRAY = (o) => {
   if (o.kind === 'full') return sym('&#xEBAA;', ink);
   const col = o.bar === 'caution' ? 'var(--caution)' : o.bar === 'critical' ? 'var(--critical)' : ink;
   const bar = o.bar === 'ok' ? `<rect x="1" y="14" width="14" height="2" rx="1" fill="var(--ok)"/>`
-            : o.bar === 'caution' || o.bar === 'critical' ? `<rect x="1" y="14" width="14" height="2" rx="1" fill="${col}"/>` : '';
+            : o.bar === 'caution' || o.bar === 'critical' ? `<rect x="1" y="14" width="14" height="2" rx="1" fill="${col}"/>`
+            // Battery level only (advertisement): a dotted bar, so it differs from live data by shape, not only colour.
+            : o.bar === 'level' ? [1, 5, 9, 13].map(x => `<rect x="${x}" y="14" width="2" height="2" fill="${ink}"/>`).join('') : '';
   return `<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><text x="8" y="12" text-anchor="middle" font-family="Segoe UI Variable Display, Segoe UI, sans-serif" font-weight="700" font-size="11.5" letter-spacing="-.4" fill="${col}">${o.n}</text>${bar}</svg>`;
 };
 
-const board = (title, desc, render) => {
+const board = (title, desc, render, id) => {
   const sec = document.createElement('section');
   sec.className = 'board';
+  if (id) sec.id = id;
   sec.innerHTML = `<h2>${title}</h2><p>${desc}</p><div class="pair"><div class="stage t-light">${render('light')}</div><div class="stage t-dark">${render('dark')}</div></div>`;
   BOARDS.appendChild(sec);
 };
@@ -265,8 +346,9 @@ const TRAY_STATES = [
   { n: '7', kind: 'num', bar: 'critical', label: 'Critical 7%' },
   { kind: 'off', label: 'No connection' },
   { kind: 'paused', label: 'Paused' },
+  { n: '84', kind: 'num', bar: 'level', label: 'Battery level only' },
 ];
-board('Tray icon', 'The number is the battery percentage, drawn at the small-icon size and recoloured with the taskbar theme. A bar under the number adds state: green while charging, amber at or below the alert threshold, red at 10% or less; colour is never the only cue, the number changes colour too and the tooltip says it in words. 100%, no data and pause use the Segoe Fluent battery glyphs Windows itself uses (full battery, battery with a cross, empty battery with pause bars), so they read as native at every scaling.', (t) => `
+board('Tray icon', 'The number is the battery percentage, drawn at the small-icon size and recoloured with the taskbar theme. A bar under the number adds state: green while charging, amber at or below the alert threshold, red at 10% or less; colour is never the only cue, the number changes colour too and the tooltip says it in words. 100%, no data and pause use the Segoe Fluent battery glyphs Windows itself uses (full battery, battery with a cross, empty battery with pause bars), so they read as native at every scaling. A DELTA 2 known only from its advertisement (no EcoFlow session) shows its number over a dotted bar: the level is real, but power, runtime and alerts are not available.', (t) => `
   <div style="width:100%">
     <div class="taskbar"><span class="sys">${'<span class="tray-btn"><i class="ico">&#xE701;</i></span><span class="tray-btn"><i class="ico">&#xE767;</i></span>'}</span>
       <span class="tray-btn hover">${TRAY(TRAY_STATES[0])}</span><span class="clock">14:32<br>12.10.2026</span></div>
@@ -279,7 +361,10 @@ board('Tooltip', 'One line, under the 127-character limit: model, percentage, th
   <figure><span class="tooltip">EB3A · 58% · 128 W out · about 1 h left</span><div class="cap">On battery</div></figure>
   <figure><span class="tooltip">EB3A · 54% · charging +264 W</span><div class="cap">Charging on mains</div></figure>
   <figure><span class="tooltip">EB3A · 100% · on mains</span><div class="cap">Full on mains</div></figure>
-  <figure><span class="tooltip">upsy · Bluetooth is off</span><div class="cap">No data (reason in words)</div></figure>`);
+  <figure><span class="tooltip">upsy · Bluetooth is off</span><div class="cap">No data (reason in words)</div></figure>
+  <figure><span class="tooltip">DELTA 2 · 84% · battery level only</span><div class="cap">Battery level only: said in words, since the dotted bar is small.</div></figure>
+  <figure><span class="tooltip multi">EB3A · 100% · on mains
+DELTA 2 · 82% · 103 W out</span><div class="cap">Two stations: the tray station first, then one short line per other station. Other lines are dropped first when the 127-character limit is reached.</div></figure>`);
 
 /* 3. Flyout ------------------------------------------------------------------------------ */
 const FOOT = (paused) => `<div class="footer"><span class="brand"><img src="../assets/brand/upsy-icon.svg" alt="">upsy</span>
@@ -304,7 +389,7 @@ const DETAILS = (open) => `<div class="expander"><div class="head"><span>Details
   <dt>Updated</dt><dd>2 s ago</dd>
   </dl>` : ''}</div>`;
 const FLY = (o) => `<div class="flyout" role="dialog" aria-label="upsy">
-  <div class="fly-main">${STATION(o.st)}<div>
+  <div class="fly-main">${GLYPH(o.glyph, o.st)}<div>
     <div class="model">${o.model}</div>
     ${o.pct != null ? `<div class="pct">${o.pct}<small>%</small></div>` : ''}
     <div class="status ${o.cls || ''} ${o.pct == null ? 'big' : ''}">${o.icon ? `<i class="ico">${o.icon}</i>` : ''}${o.status}</div>
@@ -334,8 +419,109 @@ board('Flyout: no data', 'Without fresh data the flyout never shows stale number
     notice: `<div class="notice"><b>Not in range or busy</b>Make sure the EB3A is on and the Bluetti app is closed. Retrying every 30 s.</div>` })}<div class="cap">Searching / reconnecting.</div></figure>
   <figure>${FLY({ model: 'EB3A', pct: null, status: 'Paused', icon: '&#xE769;', st: { off: 1 }, paused: true,
     notice: `<div class="notice"><b>Connection paused</b>The Bluetti phone app can use the station now. No alerts while paused. Resumes by itself at 15:02.<br><span class="btn accent focus-ring">Resume</span></div>` })}<div class="cap">Paused by the user. Keyboard focus shown on Resume.</div></figure>
-  <figure>${FLY({ model: 'First start', pct: null, status: 'Looking for an EB3A…', icon: '&#xE895;', st: { off: 1 },
-    notice: `<div class="notice"><b>Turn on the station near this PC</b>No pairing needed. upsy finds it by name and remembers it.</div>` })}<div class="cap">First run, nothing remembered yet.</div></figure>`);
+  <figure>${FLY({ model: 'First start', pct: null, status: 'Looking for a station…', icon: '&#xE895;', st: { off: 1 },
+    notice: `<div class="notice"><b>Turn on the station near this PC</b>upsy reads the Bluetti EB3A and the EcoFlow DELTA 2. No pairing needed: it adds the first one it finds and remembers it.</div>` })}<div class="cap">First run, nothing remembered yet.</div></figure>`);
+const WIN = (title, body, actions) => `<div class="win" role="dialog" aria-label="${title}"><div class="bar"><img src="../assets/brand/upsy-icon.svg" alt="">upsy<span class="x">&#xE8BB;</span></div>
+  <div class="body">${body}</div>${actions ? `<div class="actions">${actions}</div>` : ''}</div>`;
+
+/* 3b. Several stations ------------------------------------------------------------------- */
+// One section per station, the tray station first. Each section is the single-station layout plus a
+// station "More" button (top right); the footer keeps the brand, Add station and the app menu.
+const SEC = (o) => `<div class="sec">
+  <span class="iconbtn more" title="${o.name} options"><i class="ico">&#xE712;</i></span>
+  <div class="fly-main">${GLYPH(o.glyph, o.st)}<div>
+    <div class="model">${o.model}${o.tray ? ' <i class="ico pin" title="Shown in the tray">&#xE718;</i>' : ''}</div>
+    ${o.pct != null ? `<div class="pct">${o.pct}<small>%</small></div>` : ''}
+    <div class="status ${o.cls || ''} ${o.pct == null ? 'big' : ''}">${o.icon ? `<i class="ico">${o.icon}</i>` : ''}${o.status}</div>
+    ${o.sub ? `<div class="sub">${o.sub}</div>` : ''}
+  </div></div>
+  ${o.flows ? `<div class="flows"><div><div class="k">In</div><div class="v">${o.flows[0]}</div></div><div><div class="k">Out</div><div class="v">${o.flows[1]}</div></div></div>` : ''}
+  ${o.notice || ''}
+  ${o.details != null ? (o.details === true ? o.detailsHtml : `<div class="expander"><div class="head"><span>Details</span><i class="ico">&#xE70D;</i></div></div>`) : ''}
+</div>`;
+const FOOT_MULTI = `<div class="footer"><span class="brand"><img src="../assets/brand/upsy-icon.svg" alt="">upsy</span>
+  <span><span class="iconbtn" title="Add station"><i class="ico">&#xE710;</i></span><span class="iconbtn" title="More"><i class="ico">&#xE712;</i></span></span></div>`;
+const FLYM = (...secs) => `<div class="flyout" role="dialog" aria-label="upsy">${secs.join('')}${FOOT_MULTI}</div>`;
+const D2_DETAILS = `<div class="expander"><div class="head"><span>Details</span><i class="ico">&#xE70E;</i></div><dl>
+  <dt class="grp">Power</dt>
+  <dt>AC input</dt><dd>328 W · 233.3 V</dd>
+  <dt>Solar / car input</dt><dd>0 W</dd>
+  <dt>AC output</dt><dd>On · 101 W</dd>
+  <dt>USB and 12 V output</dt><dd>Off · 0 W</dd>
+  <dt>Battery net</dt><dd>+227 W</dd>
+  <dt>Load present</dt><dd>Yes</dd>
+  <dt>Full in</dt><dd>About 1 h 10 min (station)</dd>
+  <dt class="grp">Station</dt>
+  <dt>Charge limit</dt><dd>100%</dd>
+  <dt>Discharge limit</dt><dd>0%</dd>
+  <dt>X-Boost</dt><dd>On</dd>
+  <dt>AC charging power</dt><dd>1200 W</dd>
+  <dt class="grp">Device</dt>
+  <dt>Model</dt><dd>EcoFlow DELTA 2</dd>
+  <dt>Serial</dt><dd>R331EXAMPLE00001</dd>
+  <dt>Firmware</dt><dd>1.0.1.52</dd>
+  <dt>Updated</dt><dd>1 s ago</dd>
+  </dl></div>`;
+const EB3A_FULL = { name: 'EB3A', model: 'EB3A · on mains', pct: 100, status: 'Full', icon: '&#xE83F;', sub: 'Mains 228 V · passing 46 W to the load',
+  st: { pct: 100, acOut: 1, acIn: 1 }, flows: ['46 W', '46 W'], details: false };
+const D2_BATT = { name: 'DELTA 2', glyph: 'delta2', model: 'DELTA 2 · on battery', pct: 82, status: 'About 7 h 10 min left', icon: '&#xE83F;', sub: 'At the current 103 W load',
+  st: { pct: 82 }, flows: ['0 W', '103 W'], details: false };
+
+board('Flyout: two stations', 'With more than one station the flyout stacks one section per station, the tray station first (marked with a pin). Each section is the single-station layout with its own Details and a More button for that station. The footer keeps the brand, Add station and the app menu. With one station the flyout is unchanged.', () => `
+  <figure>${FLYM(SEC({ ...EB3A_FULL, tray: true }), SEC(D2_BATT))}<div class="cap">EB3A in the tray, DELTA 2 on battery with the station&rsquo;s own runtime.</div></figure>
+  <figure>${FLYM(SEC({ ...D2_BATT, tray: true, model: 'DELTA 2 · on mains', pct: 80, status: 'Charging · +227 W', icon: '&#xE83E;', cls: 'ok', sub: 'Full in about 1 h 10 min · mains 233 V',
+      st: { pct: 80, lvl: 'ok' }, flows: ['328 W', '101 W'], details: true, detailsHtml: D2_DETAILS }),
+    SEC({ ...EB3A_FULL, model: 'EB3A · on battery', pct: 58, status: 'About 1 h left', sub: 'At the current 128 W load', st: { pct: 58, acOut: 1 }, flows: ['0 W', '128 W'] }))}
+    <div class="cap">DELTA 2 chosen for the tray and charging, Details expanded: its fields, settings and identity. Its AC outlets are at the back, so the In/Out strip carries AC.</div></figure>
+  <figure style="display:flex; flex-direction:column; gap:8px"><div class="menu" style="width:264px">
+    <div class="item title">DELTA 2 · 82% · on battery</div>
+    <div class="item hover"><i class="ico">&#xE769;</i><span>Pause for 30 minutes</span><span></span></div>
+    <div class="item"><i class="ico">&#xE718;</i><span>Show in tray</span><span></span></div>
+    <hr>
+    <div class="item"><i class="ico">&#xE74D;</i><span>Forget this station…</span><span></span></div>
+  </div><div class="cap">Station More menu. Pause hands this station to its phone app and keeps the other one connected. For the tray station, Show in tray is checked and disabled.</div></figure>
+  <figure>${WIN('Forget DELTA 2?', `<h3>Forget DELTA 2?</h3><p>upsy stops watching this station: no data, no alerts, and it is not reconnected after a restart. You can add it again from Add station; your EcoFlow sign-in is kept.</p>`, `<span class="btn">Cancel</span><span class="btn accent">Forget</span>`)}<div class="cap">Forget asks once, names the station and says how to undo it. Escape and Cancel keep the station.</div></figure>`, 'multi');
+
+const LEVEL = (status, icon, notice) => FLY({ glyph: 'delta2', model: 'DELTA 2 · battery level only', pct: 84, status, icon,
+  st: { pct: 84, lvl: 'muted' }, notice });
+board('DELTA 2: battery level only', 'Without an EcoFlow session the DELTA 2 still shows the level it advertises, labelled so it is never mistaken for live data: muted gauge, no In/Out strip, no runtime, no alerts. The notice says why and offers the one action that fixes it.', () => `
+  <figure>${LEVEL('Sign-in needed', '&#xE77B;',
+    `<div class="notice"><b>Connect your EcoFlow account</b>The DELTA 2 shares data only with the account it is added to in the EcoFlow app. upsy keeps just the account&rsquo;s user ID; your password is not stored.<br><span class="btn accent">Sign in</span></div>`)}<div class="cap">No EcoFlow user ID yet.</div></figure>
+  <figure>${LEVEL('Account not accepted', '&#xE7BA;',
+    `<div class="notice"><b>Add the DELTA 2 again in the EcoFlow app</b>The station remembers a different account. In the EcoFlow app, remove the DELTA 2 and add it again with this account, then try again.<br><span class="btn">Try again</span></div>`)}<div class="cap">Wrong key (auth reply 06).</div></figure>
+  <figure>${LEVEL('EcoFlow not set up', '&#xE946;',
+    `<div class="notice"><b>The EcoFlow key table is missing</b>upsy needs a one-time setup step for EcoFlow stations. The guide shows the command; the EB3A is not affected.<br><span class="btn">Open setup guide</span></div>`)}<div class="cap">Key table file missing or invalid.</div></figure>
+  <figure>${LEVEL('In use by another app', '&#xE8EA;',
+    `<div class="notice"><b>The EcoFlow app may be using the station</b>The DELTA 2 talks to one app at a time. Close the EcoFlow app on your phone; upsy reconnects by itself.</div>`)}<div class="cap">Link refused while the station still advertises.</div></figure>`, 'adv-only');
+
+const G2 = (s, cap) => `<figure><div class="flyout" style="width:auto; padding:12px">${DELTA2(s)}</div><div class="cap">${cap}</div></figure>`;
+board('DELTA 2 glyph', 'Derived from the owner&rsquo;s outline (assets/station/delta2-outline.svg) by tools/gen_station_glyph.py: 72×96, centred in the same 104×96 box as the EB3A. The front shows the screen and the USB panel, so those are the live parts: the half ring fills to the level, and the USB-A/USB-C panel lights up with an accent tint when USB or 12 V output is on.', () => `
+  ${G2({ pct: 82 }, 'On battery, 82%')}
+  ${G2({ pct: 82, dcOut: 1 }, 'USB / 12 V on')}
+  ${G2({ pct: 80, lvl: 'ok' }, 'Charging')}
+  ${G2({ pct: 18, lvl: 'caution' }, 'Low')}
+  ${G2({ pct: 7, lvl: 'critical' }, 'Critical')}
+  ${G2({ pct: 84, lvl: 'muted' }, 'Battery level only')}
+  ${G2({ off: 1 }, 'No data')}`, 'glyph-delta2');
+
+const SIGNIN = (state) => WIN('Sign in to EcoFlow', `<h3>Sign in to EcoFlow</h3>
+  <p>Your DELTA 2 shares data only with the EcoFlow account it is added to. upsy asks EcoFlow once for that account&rsquo;s user ID and keeps only the ID, encrypted for your Windows account. Your password is not stored.</p>
+  ${state === 'error' ? `<div class="infobar"><i class="ico">&#xEA39;</i><div><b>EcoFlow did not accept the sign-in</b>Incorrect password. Check it and try again.</div></div>` : ''}
+  <div class="field"><label>Email</label><div class="input ${state === 'idle' ? 'focus' : ''}">${state === 'idle' ? '<span class="ph">name@example.com</span>' : 'name@example.com'}</div></div>
+  <div class="field"><label>Password</label><div class="input ${state === 'error' ? 'focus' : ''}">${state === 'idle' ? '' : '••••••••••'}</div></div>`,
+  `<span class="btn">Cancel</span><span class="btn accent">${state === 'busy' ? '<span class="ring" style="border-top-color:var(--on-accent)"></span>&nbsp; Signing in' : 'Sign in'}</span>`);
+board('Sign in to EcoFlow', 'A small window opened from Sign in. It says what is kept and what is not before asking for anything. Enter submits; Escape cancels. On success it closes and the DELTA 2 switches to live data.', () => `
+  <figure>${SIGNIN('idle')}<div class="cap">Opens with focus in Email.</div></figure>
+  <figure>${SIGNIN('busy')}<div class="cap">Signing in: the button shows progress, the fields stay readable.</div></figure>
+  <figure>${SIGNIN('error')}<div class="cap">EcoFlow&rsquo;s message in an error bar; focus returns to Password.</div></figure>`, 'signin');
+
+const ADD = (rows) => WIN('Add a station', `<h3>Add a station</h3>
+  <p>Stations near this PC that upsy can read. Turn the station on and keep it within a few metres.</p>
+  <div class="list">${rows}</div>`, `<span class="btn">Close</span>`);
+board('Add station', 'Opened from Add station in the flyout footer or the menu. Lists supported stations advertising nearby, refreshing while open; stations already added are shown as such.', () => `
+  <figure>${ADD(`<div class="row"><i class="ico">&#xE83F;</i><div><b>EcoFlow DELTA 2</b><span class="s">R33-0001 · signal good</span></div><span class="btn accent">Add</span></div>
+    <div class="row"><i class="ico">&#xE83F;</i><div><b>Bluetti EB3A</b><span class="s">EB3A2240000000001</span></div><span class="sub">Added</span></div>`)}<div class="cap">One new station found. Adding the DELTA 2 asks for EcoFlow sign-in when none is stored.</div></figure>
+  <figure>${ADD(`<div class="empty"><span class="ring"></span>&nbsp; Looking for stations…<br><br>upsy reads the Bluetti EB3A and the EcoFlow DELTA 2. Close the phone app if it is connected to the station.</div>`)}<div class="cap">Nothing new yet: keeps looking while open.</div></figure>`, 'add-station');
 
 /* 4. Menu -------------------------------------------------------------------------------- */
 board('Context menu', 'Right-click the icon, or More in the flyout footer. Native Windows 11 menu metrics; the bold default item opens the flyout (also Enter on the focused icon, after Win+B). The threshold opens a submenu of fixed steps.', () => `
@@ -357,14 +543,33 @@ board('Context menu', 'Right-click the icon, or More in the flyout footer. Nativ
     <div class="item"><span></span><span>30%</span><span></span></div>
   </div></figure>`);
 
+board('Context menu: several stations', 'With two or more stations the menu adds Show in tray (a submenu of stations, the current one checked), and Pause names the tray station it acts on. Add station is always there; Sign out of EcoFlow appears only when signed in.', () => `
+  <figure style="display:flex; gap:8px; align-items:flex-start"><div class="menu" style="width:272px">
+    <div class="item title">EB3A · 100% · on mains</div>
+    <div class="item"><span></span><span style="font-weight:600">Open upsy</span><span></span></div>
+    <div class="item"><i class="ico">&#xE769;</i><span>Pause EB3A for 30 minutes</span><span></span></div>
+    <div class="item hover"><i class="ico">&#xE718;</i><span>Show in tray</span><span class="meta">EB3A &nbsp;<i class="ico" style="font-size:10px">&#xE76C;</i></span></div>
+    <div class="item"><i class="ico">&#xE710;</i><span>Add station…</span><span></span></div>
+    <hr>
+    <div class="item"><i class="ico">&#xE73E;</i><span>Start with Windows</span><span></span></div>
+    <div class="item"><i class="ico">&#xE7BA;</i><span>Low battery alert</span><span class="meta">20% &nbsp;<i class="ico" style="font-size:10px">&#xE76C;</i></span></div>
+    <div class="item"><i class="ico">&#xE77B;</i><span>Sign out of EcoFlow</span><span></span></div>
+    <hr>
+    <div class="item"><i class="ico">&#xE711;</i><span>Exit</span><span></span></div>
+  </div>
+  <div class="menu" style="width:136px; margin-top:104px">
+    <div class="item hover"><i class="ico">&#xE73E;</i><span>EB3A</span><span></span></div>
+    <div class="item"><span></span><span>DELTA 2</span><span></span></div>
+  </div></figure>`, 'menu-multi');
+
 /* 5. Toasts ------------------------------------------------------------------------------ */
 const TOAST = (h, p, mascot) => `<div class="toast"><div class="app"><img src="../assets/brand/upsy-icon.svg" alt="">upsy<span class="x">&#xE8BB;</span></div>
   <div class="body"><img src="../assets/brand/${mascot}" alt=""><div><h4>${h}</h4><p>${p}</p></div></div></div>`;
-board('Notifications', 'Windows toasts from the tray icon. Title says what happened, body says what it means now. Each fires once per event (debounced 5 s for mains). Low fires at the user threshold, critical once more at 10%.', () => `
-  <figure>${TOAST('Mains power lost', 'EB3A is on battery at 92%, about 1 h 40 min at 128 W.', 'upsy-icon.svg')}</figure>
-  <figure>${TOAST('Battery low: 20%', 'About 20 min left at 131 W. Save your work.', 'upsy-icon.svg')}</figure>
-  <figure>${TOAST('Battery critical: 10%', 'About 10 min left at 131 W. Shut down or hibernate now.', 'upsy-icon.svg')}</figure>
-  <figure>${TOAST('Mains power is back', 'EB3A is charging at 61%.', 'upsy-icon.svg')}</figure>`);
+board('Notifications', 'Windows toasts from the tray icon. Title names the station and what happened, body says what it means now; each station alerts on its own. Each fires once per event (debounced 5 s for mains). Low fires at the user threshold, critical once more at 10%.', () => `
+  <figure>${TOAST('EB3A: mains power lost', 'On battery at 92%, about 1 h 40 min at 128 W.', 'upsy-icon.svg')}</figure>
+  <figure>${TOAST('EB3A: battery low, 20%', 'About 20 min left at 131 W. Save your work.', 'upsy-icon.svg')}</figure>
+  <figure>${TOAST('DELTA 2: battery critical, 10%', 'About 50 min left at 103 W. Shut down or hibernate now.', 'upsy-icon.svg')}</figure>
+  <figure>${TOAST('DELTA 2: mains power is back', 'Charging at 61%, full in about 1 h 30 min.', 'upsy-icon.svg')}</figure>`);
 
 /* 6. Brand ------------------------------------------------------------------------------- */
 const brand = document.createElement('section');

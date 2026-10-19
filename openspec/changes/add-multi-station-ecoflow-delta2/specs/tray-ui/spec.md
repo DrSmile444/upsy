@@ -61,7 +61,7 @@ Left-clicking the icon SHALL open a flyout near the tray, in the current light o
 
 #### Scenario: Battery level only
 - **WHEN** the DELTA 2 is shown from its advertisement
-- **THEN** it shows the percentage marked as battery level only, the reason, and the action that unlocks live data (sign in, try again, or resume)
+- **THEN** it shows the percentage marked as battery level only, the reason, and the action that unlocks live data (sign in, try again, resume, or open the setup guide)
 
 #### Scenario: Dismiss
 - **WHEN** the user clicks elsewhere or presses Escape

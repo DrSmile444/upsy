@@ -47,11 +47,15 @@ The app SHALL let the user add more stations from a list of supported stations a
 - **THEN** the app says that no new station was found and keeps looking while the list is open
 
 ### Requirement: Forget a station
-The app SHALL let the user forget a station, which ends its link, removes it from the list and stops its alerts.
+The app SHALL let the user forget a station after one confirmation that names the station and says it can be added again, which ends its link, removes it from the list and stops its alerts. Cancelling SHALL keep the station unchanged.
 
 #### Scenario: Forget the DELTA 2
-- **WHEN** the user forgets the DELTA 2
+- **WHEN** the user chooses Forget for the DELTA 2 and confirms
 - **THEN** its link is released, it disappears from the flyout, and it is not reconnected after a restart
+
+#### Scenario: Cancel forgetting
+- **WHEN** the user chooses Forget and then Cancel
+- **THEN** the station stays in the list and keeps its link
 
 ### Requirement: Display names
 Each station SHALL have a display name that defaults to its model name, with a short serial suffix only when two listed stations share a model.

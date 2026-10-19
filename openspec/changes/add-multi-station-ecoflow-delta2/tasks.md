@@ -3,7 +3,7 @@
 ## 0. Design (before any UI code)
 
 - [x] 0.1 Owner: draw the DELTA 2 outline as `assets/station/delta2-outline.svg`; delivered 2026-10-19 (front view: shell, handle, screen, 4 USB-A + 2 USB-C panel, power button; AC, 12 V and inputs are at the back)
-- [ ] 0.2 Add frames to `design/upsy.design.html`, light and dark:
+- [x] 0.2 Add frames to `design/upsy.design.html`, light and dark:
   - `#multi` (EB3A + DELTA 2 flyout, tray station first, per-station ⋯);
   - `#adv-only` (battery level only, for each reason: sign-in needed, key rejected, key table missing, phone holds the link);
   - `#signin`;
@@ -13,7 +13,7 @@
   - a tooltip with two stations.
 
   Verify by rendering both themes with the screenshot helper and checking real Windows 11 sizes.
-- [ ] 0.3 Review the new frames with the impeccable detector and `/ux-crux-review`, fix the findings, and record the new surfaces and tokens in DESIGN.md; verify the detector returns `[]`
+- [x] 0.3 Review the new frames with the impeccable detector and `/ux-crux-review`, fix the findings, and record the new surfaces and tokens in DESIGN.md; verify the detector returns `[]`
 - [ ] 0.4 Owner accepts the mock-up; verify by recording the acceptance date in DESIGN.md
 
 ## 1. Core: driver boundary (no behaviour change for the EB3A)
