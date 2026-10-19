@@ -1,6 +1,6 @@
 # Design
 
-Recorded from the built mock-up `design/upsy.design.html` (accepted 2026-10-12). Product truth is in PRODUCT.md.
+Recorded from the built mock-up `design/upsy.design.html` (accepted 2026-10-12; multi-station and EcoFlow frames accepted 2026-10-19). Product truth is in PRODUCT.md.
 
 ## World
 

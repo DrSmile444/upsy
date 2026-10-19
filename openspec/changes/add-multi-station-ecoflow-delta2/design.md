@@ -12,7 +12,7 @@ How upsy works today (see the archived `2026-10-19-add-eb3a-tray-monitor`):
 
 ### What the spike established
 
-The owner's DELTA 2 was read end to end on 2026-10-19 with `local/efspike`. Captures are in `local/ecoflow/captures`.
+The owner's DELTA 2 was read end to end on 2026-10-19 with `local/efspike`. Captures are in `local/ecoflow/captures`. Serial numbers, names and addresses in this change are placeholders in the real format; the owner's identifiers stay in `local/`.
 
 **Advertisement**
 - Manufacturer data `0xB5B5`. Layout: `[0]` 0x13, `[1..16]` ASCII serial `R331EXAMPLE00001`, `[17]` battery % (read 0x54 = 84 and 0x57 = 87, both matching the screen), `[22]` flags 0x3E, i.e. encryption type 7.

@@ -14,7 +14,7 @@
 
   Verify by rendering both themes with the screenshot helper and checking real Windows 11 sizes.
 - [x] 0.3 Review the new frames with the impeccable detector and `/ux-crux-review`, fix the findings, and record the new surfaces and tokens in DESIGN.md; verify the detector returns `[]`
-- [ ] 0.4 Owner accepts the mock-up; verify by recording the acceptance date in DESIGN.md
+- [x] 0.4 Owner accepts the mock-up; verify by recording the acceptance date in DESIGN.md
 
 ## 1. Core: driver boundary (no behaviour change for the EB3A)
 

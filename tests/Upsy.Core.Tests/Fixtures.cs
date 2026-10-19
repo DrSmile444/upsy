@@ -5,7 +5,7 @@ namespace Upsy.Core.Tests;
 /// <summary>Register values captured from the owner's EB3A (local/dump1.log, local/watch*.log).</summary>
 internal static class Fixtures
 {
-    // Registers 10..49 from the live dump: model EB3A, serial 2240000000001, battery 98%, AC out 149 W, AC on.
+    // Registers 10..49 from the live dump: model EB3A, serial 2240000000001 (replaced: the real serial is not kept in the repo), battery 98%, AC out 149 W, AC on.
     public static readonly ushort[] DumpCore =
     [
         17730, 13121, 0, 0, 0, 0, 1019, 32769, 35431, 521, 0, 0, 0, 9694, 3, 8599, 3, 0, 0, 0,
