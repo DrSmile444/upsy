@@ -66,7 +66,7 @@ public static class Program
         ];
         foreach (var light in new[] { true, false })
         {
-            foreach (var size in new[] { 16, 32 })
+            foreach (var size in new[] { 16, 20, 24, 32 })
             {
                 for (var i = 0; i < icons.Length; i++)
                 {
