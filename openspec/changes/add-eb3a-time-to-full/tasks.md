@@ -19,11 +19,11 @@
 ## 2. Energy log
 
 - [x] 2.1 Implement `EnergyLog` in Core (charge and discharge runs, every sample integrated, gaps over 10 s skipped, one summary a minute, new run after a minute idle or a change of direction); verify tests with a fake clock: energy over a cycling load equals the integral, idle writes nothing, direction change and long gaps start new runs
-- [ ] 2.2 Write the summaries from `TrayApp` as `<name> <charge|discharge>: <pct>%, in <W> W, out <W> W, <±W> W net, <Wh> Wh in <min> min`; verify with the running EB3A that discharge or charge lines appear once a minute
+- [x] 2.2 Write the summaries from `TrayApp` as `<name> <charge|discharge>: <pct>%, in <W> W, out <W> W, <±W> W net, <Wh> Wh in <min> min`; verify with the running EB3A that discharge or charge lines appear once a minute
 - [x] 2.3 Add `tools/energy_calibration.py` (last complete discharge and charge runs → usable factor, charge efficiency, net spread); verify on a synthetic log with a known answer
 
 ## 3. Calibration and docs
 
-- [ ] 3.1 Owner: run the EB3A on battery from 100% to about 40% with the boiler as usual, then charge it back to 100%, upsy running; verify the log holds both runs
-- [ ] 3.2 Run the tool, set the EB3A `UsableFactor` and `ChargeEfficiency`, and record the run (Δ%, Wh, spread) in this design; verify the next estimates match the observed times within about 10%
+- [x] 3.1 Owner: run the EB3A on battery from 100% to about 40% with the boiler as usual, then charge it back to 100%, upsy running; verify the log holds both runs
+- [x] 3.2 Run the tool, set the EB3A `UsableFactor` and `ChargeEfficiency`, and record the run (Δ%, Wh, spread) in this design; verify the next estimates match the observed times within about 10%
 - [x] 3.3 Update README (EB3A time to full, station versus estimated wording, the energy log and the tool), install the new build, and run the quality gate (Release build with 0 warnings, tests, format check, `openspec validate --strict`)

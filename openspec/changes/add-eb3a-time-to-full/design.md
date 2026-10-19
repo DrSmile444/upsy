@@ -59,7 +59,7 @@ Field data (see proposal):
    - Rejected: "~35 min" and "est.", which read as abbreviations in a plain-language UI.
 
 4. **Per-model factors in `StationProfile`.**
-   - `ChargeEfficiency` (EB3A 0.75, provisional) joins the existing `UsableFactor`, which moves from a constant into the profile (EB3A 0.85, provisional).
+   - `ChargeEfficiency` (EB3A 0.75, provisional; 0.93 after calibration) joins the existing `UsableFactor`, which moves from a constant into the profile (EB3A 0.85, provisional; confirmed by calibration).
    - The DELTA 2 gets 1.0 for both; they are unused because it reports its own times.
 
 5. **`EnergyLog` in Core, written by the app.** A pure accumulator per station:
@@ -83,3 +83,18 @@ Field data (see proposal):
 - [Thermal pause] → Net ≤ 10 W counts as not charging: no time is shown and the warm-up restarts.
 - [Log growth] → One line a minute while charging or discharging, about 200 lines per full cycle, inside the 512 KB rotation.
 - [Exact station values change every minute] → They are the station's own numbers and change once a minute, which is fine at flyout glance speed.
+
+## Calibration (2026-10-19)
+
+One EB3A cycle with the boiler as usual, logged by `EnergyLog` and read by `tools/energy_calibration.py`:
+
+| Run | Δ% | Energy | Net power | Factor |
+|---|---|---|---|---|
+| Discharge | 99% → 35% in 118 min | 145.9 Wh out | −74 W mean, −95 … −49 W, sd 6 W | usable factor **0.851** |
+| Charge, constant power | 36% → 86% in 33 min | 144.1 Wh in | +264 W, sd 1 W | charge efficiency **0.930** |
+| Charge, whole run | 36% → 94% in 40 min | 166.1 Wh in | +244 W mean, +150 … +265 W | charge efficiency 0.936 |
+
+- `UsableFactor` stays 0.85; `ChargeEfficiency` goes from 0.75 to **0.93**.
+- The charger holds 264 W net up to 86%, then drops to about 155 W (the taper). The taper is slower power, not a loss: 87% → 94% gives the same efficiency within the whole-percent resolution, so the factor comes from the constant-power part and the estimate lengthens on its own when power drops.
+- Check against the observed times: the discharge predicts 64% × 268 Wh × 0.85 ÷ 74 W = 118 min (observed 118 min); the charge predicts 50% × 268 Wh ÷ (264 W × 0.93) = 33 min to 86% (observed 33 min). With the provisional 0.75 the charge estimate was 41 min, 24% long.
+- The log stopped at 94% (net ≤ 10 W or the end of the run); the last few percent to 100% were not measured.

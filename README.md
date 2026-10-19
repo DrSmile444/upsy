@@ -191,7 +191,7 @@ The two factors are set per model in `StationCatalog`.
   - recovery after sleep and after toggling Bluetooth on the PC or a station;
   - handing a station to its phone app with Pause;
   - how toasts behave under Do Not Disturb.
-- **To calibrate:** the EB3A usable factor (0.85) and charge efficiency (0.75), both provisional, from one logged discharge and charge.
+- **Calibrated:** the EB3A usable factor (0.85) and charge efficiency (0.93), from one logged discharge (99% to 35% at about 74 W) and charge (36% to 94% at 264 W net).
 
 Later: other EcoFlow models on the same protocol (DELTA 2 Max, River 2/3, DELTA 3), more Bluetti models, a combined "total backup" view, and hibernating or shutting down the PC at critical charge.
 
