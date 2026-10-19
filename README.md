@@ -93,7 +93,11 @@ PowerReading, RuntimeEstimator, AlertMonitor, StatusText, settings v2
 - **Derived state.**
   - *On mains* = AC input voltage above 100 V. Power can be 0 W on a live socket when the battery is full.
   - *Charging* = total input minus total output above 10 W, below 100%. This covers solar/DC input too.
-  - *Runtime*: the DELTA 2 reports its own time to empty and to full, and upsy uses it. For the EB3A, upsy estimates it as capacity × 0.85 × battery % ÷ discharge power, smoothed over about a minute. Either way it is shown as "about …", rounded to 5 or 10 minutes, only on battery with a load.
+  - *Runtime and time to full*: the DELTA 2 reports both, and upsy shows them as reported, to the minute ("7 h 11 min left", Details "(station)"). For the EB3A upsy estimates them and says so ("about 1 h left (estimated)", "Full in about 35 min, estimated"):
+    - runtime = capacity × usable factor × battery % ÷ discharge power, smoothed over about a minute;
+    - time to full = capacity × (100 − battery %) ÷ (net charge power × charge efficiency), with net = input − output smoothed over about 3 minutes, so a load that cycles does not jump the number. It is shown after a minute of charging, and not while charging is paused (net 10 W or less).
+
+    Estimates are rounded to 5/10 minutes. Runtime is shown only on battery with a load.
 - **Resilience.**
   - Retries with backoff up to 30 s.
   - Reconnects after PC sleep and reports Bluetooth off.
@@ -130,7 +134,7 @@ src/Upsy               tray app: WinRT BLE, WinForms NotifyIcon, WPF flyout and 
 tests/Upsy.Core.Tests  xUnit v3 tests on real captures (EB3A registers, DELTA 2 heartbeats) and a fake EcoFlow station
 design/                HTML/CSS mock-up of every surface (the UI reference)
 assets/                brand (mascot, icon) and the station drawings, as SVG
-tools/                 installer, key table fetcher, station glyph generator
+tools/                 installer, key table fetcher, station glyph generator, energy calibration
 openspec/              specs and the changes that built this
 ```
 
@@ -162,6 +166,22 @@ Design decisions live in [DESIGN.md](DESIGN.md) and [design/upsy.design.html](de
 - **Going back to an older upsy.** The first start of this version moves `settings.json` to version 2 and keeps the old file as `settings.v1.json`; restore it before running an older build.
 - **Something odd happened overnight.** Read `%LOCALAPPDATA%\upsy\upsy.log`.
 
+### Calibrating a station's estimates
+
+While a station charges, or discharges into a load on battery, upsy writes one line a minute to its log. The energy is integrated over every sample, so a cycling load is counted exactly:
+
+```
+2026-10-20 10:15:02 INFO EB3A discharge: 72%, in 0 W, out 88 W, -88 W net, 23.1 Wh in 15 min
+2026-10-20 13:40:07 INFO EB3A charge: 47%, in 309 W, out 88 W, +221 W net, 54.3 Wh in 15 min
+```
+
+After a long discharge (say 100% to 40%) and a charge back to 100%, `python tools/energy_calibration.py` prints:
+- the usable factor (runtime estimate);
+- the charge efficiency (time-to-full estimate);
+- the spread of net power in each run.
+
+The two factors are set per model in `StationCatalog`.
+
 ## Status and roadmap
 
 - **EB3A** works end to end. Mains unplug and replug raise the expected alerts.
@@ -171,7 +191,7 @@ Design decisions live in [DESIGN.md](DESIGN.md) and [design/upsy.design.html](de
   - recovery after sleep and after toggling Bluetooth on the PC or a station;
   - handing a station to its phone app with Pause;
   - how toasts behave under Do Not Disturb.
-- **To calibrate:** the EB3A runtime's 0.85 factor, from a logged discharge.
+- **To calibrate:** the EB3A usable factor (0.85) and charge efficiency (0.75), both provisional, from one logged discharge and charge.
 
 Later: other EcoFlow models on the same protocol (DELTA 2 Max, River 2/3, DELTA 3), more Bluetti models, a combined "total backup" view, and hibernating or shutting down the PC at critical charge.
 
