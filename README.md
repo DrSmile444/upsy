@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/mascot.png" width="160" alt="Upsy, a battery with a daisy">
+  <img src="docs/images/mascot.png" width="160" alt="Upsy, a battery with a raised fist">
 </p>
 
 <h1 align="center">upsy</h1>
@@ -13,7 +13,7 @@
 
 A small power station makes a good UPS for a desk PC, but its state is only visible on its own little screen, and neither Bluetti nor EcoFlow has an app for Windows. `upsy` reads the stations over Bluetooth LE (no pairing, read-only) and puts them in the notification area. Watch one station or several: the tray icon shows the one you choose, the flyout shows them all.
 
-*Upsy, as in "upsy-daisy", what you say when you catch someone who trips. Upsy catches your PC when the power trips.*
+*Upsy, as in "upsy-daisy", what you say when you catch someone who trips. Upsy has your PC covered when the power trips.*
 
 ## What you get
 
@@ -134,7 +134,7 @@ src/Upsy               tray app: WinRT BLE, WinForms NotifyIcon, WPF flyout and 
 tests/Upsy.Core.Tests  xUnit v3 tests on real captures (EB3A registers, DELTA 2 heartbeats) and a fake EcoFlow station
 design/                HTML/CSS mock-up of every surface (the UI reference)
 assets/                brand (mascot, icon) and the station drawings, as SVG
-tools/                 installer, key table fetcher, station glyph generator, energy calibration
+tools/                 installer, key table fetcher, station glyph and brand icon generators, energy calibration
 openspec/              specs and the changes that built this
 ```
 
@@ -153,6 +153,8 @@ Useful while working on the UI:
 src\Upsy\bin\Release\net10.0-windows10.0.19041.0\upsy.exe --render .\preview
 # After editing a station outline in assets/station/*-outline.svg
 python tools/gen_station_glyph.py
+# After editing the brand art in assets/brand/*.svg (needs rsvg-convert and ImageMagick 7)
+python tools/gen_brand_icons.py
 ```
 
 Design decisions live in [DESIGN.md](DESIGN.md) and [design/upsy.design.html](design/upsy.design.html) (open it in a browser); product context in [PRODUCT.md](PRODUCT.md).
