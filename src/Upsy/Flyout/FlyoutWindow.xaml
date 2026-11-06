@@ -1,6 +1,7 @@
 <Window x:Class="Upsy.Flyout.FlyoutWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:Upsy.Flyout"
         Title="upsy" Width="392" SizeToContent="Height"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         ResizeMode="NoResize" ShowInTaskbar="False" Topmost="True" ShowActivated="True"
@@ -28,7 +29,7 @@
                     AutomationProperties.Name="More options" ToolTip="More options" />
           </StackPanel>
           <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-            <Image Source="/upsy;component/Assets/upsy-256.png" Width="16" Height="16" Margin="0,0,8,0" RenderOptions.BitmapScalingMode="HighQuality" />
+            <local:BrandIcon Margin="0,0,8,0" />
             <TextBlock Text="upsy" FontSize="12" Foreground="{DynamicResource Ink2}" VerticalAlignment="Center" />
           </StackPanel>
         </DockPanel>

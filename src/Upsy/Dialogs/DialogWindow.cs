@@ -24,7 +24,7 @@ public class DialogWindow : Window
         UseLayoutRounding = true;
         FontFamily = new System.Windows.Media.FontFamily("Segoe UI Variable Text, Segoe UI");
         FontSize = 14;
-        Icon = System.Windows.Media.Imaging.BitmapFrame.Create(new Uri("pack://application:,,,/upsy;component/Assets/upsy-256.png"));
+        Icon = System.Windows.Media.Imaging.BitmapFrame.Create(new Uri("pack://application:,,,/upsy;component/Assets/upsy.ico"));
         PreviewKeyDown += (_, e) =>
         {
             if (e.Key == Key.Escape)

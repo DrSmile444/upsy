@@ -22,8 +22,9 @@
     <Using Remove="System.Drawing" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Assets\upsy-256.png" />
-    <EmbeddedResource Include="Assets\upsy.ico" LogicalName="upsy.ico" />
+    <Resource Include="Assets\upsy.ico" />
+    <Resource Include="Assets\upsy-16.png" />
+    <Resource Include="Assets\upsy-32.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Upsy.Core\Upsy.Core.csproj" />
