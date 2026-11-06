@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-label="upsy">
+  <!-- hand-placed pixels; ink #3A2A22, mustard #E3A72F, teal #2F7F7A, cream #F6ECD6 -->
+  <path fill="#3A2A22" d="M5 0h6v1h1v2h-1v-1h-6v1h-1v-2h1z"/>
+  <path fill="#2F7F7A" d="M5 1h6v1h-6z"/>
+  <path fill="#3A2A22" d="M3 2h10v1h1v12h-1v1h-10v-1h-1v-12h1z"/>
+  <path fill="#E3A72F" d="M3 3h10v12h-10z"/>
+  <path fill="#2F7F7A" d="M3 3h10v1h-10z"/>
+  <path fill="#2F7F7A" d="M3 11h4v1h6v3h-10z"/>
+  <path fill="#F6ECD6" d="M3 10h5v1h-1v1h-4z M8 9h5v2h-6v-1h1z"/>
+  <path fill="#FFFFFF" d="M4 6h1v2h-1z M9 6h1v2h-1z"/>
+  <path fill="#3A2A22" d="M5 6h1v2h-1z M10 6h1v2h-1z M4 5h1v1h-1z M11 5h1v1h-1z M7 8h2v1h-2z"/>
+</svg>
