@@ -133,7 +133,7 @@ src/Upsy.Core          pure logic, no Windows UI (net10.0): drivers, protocols, 
 src/Upsy               tray app: WinRT BLE, WinForms NotifyIcon, WPF flyout and dialogs
 tests/Upsy.Core.Tests  xUnit v3 tests on real captures (EB3A registers, DELTA 2 heartbeats) and a fake EcoFlow station
 design/                HTML/CSS mock-up of every surface (the UI reference)
-assets/                brand (mascot, icon) and the station drawings, as SVG
+assets/                brand (mascot, 16 px and 32 px icons) and the station drawings, as SVG
 tools/                 installer, key table fetcher, station glyph and brand icon generators, energy calibration
 openspec/              specs and the changes that built this
 ```

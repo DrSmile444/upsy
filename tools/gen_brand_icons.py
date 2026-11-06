@@ -50,7 +50,7 @@ def render(size: int, out: Path, tmp: Path) -> Path:
         # Render large, trim to the figure, pad to a square, then scale down.
         run("rsvg-convert", "-w", "1024", str(svg), "-o", str(raw))
         run("magick", str(raw), "-trim", "+repage", "-background", "none", "-gravity", "center",
-            "-extent", "%[fx:max(w,h)*1.04]x%[fx:max(w,h)*1.04]", "-filter", "Lanczos",
+            "-extent", "%[fx:round(max(w,h)*1.04)]x%[fx:round(max(w,h)*1.04)]", "-filter", "Lanczos",
             "-resize", f"{size}x{size}", *STABLE, f"PNG32:{out}")
     else:
         run("rsvg-convert", "-w", str(size), "-h", str(size), str(svg), "-o", str(raw))

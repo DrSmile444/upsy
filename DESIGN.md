@@ -55,7 +55,7 @@ EB3A live parts: the half ring on the station screen fills to the battery level 
 | | |
 |---|---|
 | Mascot | `assets/brand/upsy-mascot.svg`: the owner's drawing of a mustard battery with a raised fist, teal cap and "charge" belly cut by a cream bolt, rust cheeks, thick ink outline, flat. Never inside status UI. |
-| App icon | Art per size: 16 px `assets/brand/upsy-icon-16.svg` (hand-placed pixels), 20-32 px `upsy-icon-32.svg` (heavier outline, bigger eyes, no highlight), 40 px and up the mascot. Used for the .exe, window icons, toasts, the flyout footer and dialog title bars (`BrandIcon`: 16 px art at 100 % scale, 32 px above). `python tools/gen_brand_icons.py` writes `upsy.ico`, `upsy-16.png`, `upsy-32.png` and `docs/images/mascot.png`. |
+| App icon | Art per size: 16 px `assets/brand/upsy-icon-16.svg` (hand-placed pixels), 20-32 px `upsy-icon-32.svg` (heavier outline, bigger eyes, no highlight), 40 px and up the mascot. Used for the .exe and window icons (Windows shows it on the taskbar, in Alt+Tab and Explorer), the flyout footer and dialog title bars (`BrandIcon`: 16 px art at 100 % scale, 32 px above). `python tools/gen_brand_icons.py` writes `upsy.ico`, `upsy-16.png`, `upsy-32.png` and `docs/images/mascot.png`. |
 | Wordmark | Fredoka 600, lower-case `upsy`. |
 | Palette | Mustard #E3A72F, Teal #2F7F7A, Rust #D2602F, Cream #F6ECD6, Ink #3A2A22. |
 
