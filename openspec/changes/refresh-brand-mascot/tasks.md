@@ -17,8 +17,9 @@
 ## 4. App
 
 - [x] 4.1 Add `BrandIcon` and use it in the flyout footer and the three dialog title bars; dialog `Window.Icon` from `upsy.ico`; verify with the quality gate (build with 0 warnings, test, format).
-- [ ] 4.2 Hardware check on Windows: at 100 % the footer and dialog bars show the 16 px art, at 150 % the 32 px art; the .exe, taskbar and Alt+Tab show the new icon; verify by screenshots.
-- [ ] 4.3 Re-render `docs/images` with `upsy.exe --render` on Windows on a 200 % display (render saves at 192 dpi and `BrandIcon` follows the monitor scale); verify that the README screenshots show the new footer icon.
+- [x] 4.2 Hardware check on Windows at 125 % (the only scale on the test machine): the footer and the sign-in, Add station and confirm bars show the 32 px art, the .exe shows the new icon, the app connects to the stations; verified by renders and the extracted .exe icon.
+- [ ] 4.4 Deferred: at 100 % the footer and dialog bars show the 16 px art; the taskbar and Alt+Tab show the new icon (needs a 100 % display and an open dialog).
+- [x] 4.3 Re-render `docs/images` with `upsy.exe --render` on Windows (render saves at 192 dpi; `BrandIcon` picks the 32 px art at any scale above 100 %, so 125 % gives the same result as 200 %); the five flyout screenshots are the renders at 50 %, and a diff against the old ones shows only the footer icon and the clock; verify that the README screenshots show the new footer icon.
 
 ## 5. Docs
 
