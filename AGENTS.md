@@ -13,8 +13,8 @@ Windows tray app that turns portable power stations into UPS monitors: it reads 
 | `src/Upsy.Core` | Pure logic. `Link`: GATT channel, driver interface, `StationMonitor` (radio, watchdog, backoff, pause). `Station`: models, `StationCatalog` (profiles, advertisement recognition), `StationRegistry`, `BluettiDriver`, EB3A registers. `Protocol`: Modbus and `Protocol/EcoFlow` (frames, crypto, session, `Delta2Decoder`, account login). `Settings` (v2, migration, protected user ID), `Power`, `Alerts`, `Presentation`. No Windows UI references. |
 | `src/Upsy` | Composition root (`Program.cs`, `Tray/TrayApp.cs`: one monitor per station), WinRT transport and the single `AdvertisementHub` (`Ble`), tray icon and menus (`Tray`), WPF flyout with one `StationView` per station and generated glyphs (`Flyout`, `Flyout/Glyphs`), sign-in / Add station / confirm windows (`Dialogs`), settings store, DPAPI, key table, autostart, theme (`Infrastructure`). |
 | `tests/Upsy.Core.Tests` | xUnit v3 tests for Core: captured EB3A registers and DELTA 2 heartbeats, a fake GATT channel, and a fake DELTA 2 that runs the station side of the handshake. |
-| `assets/` | Brand (mascot, app icon) and station drawings. `assets/station/*-outline.svg` are the owner's drawings; `*.svg` and `src/Upsy/Flyout/Glyphs/*Glyph.xaml` are generated from them. |
-| `tools/` | `gen_station_glyph.py` (glyph generator), `install.ps1` (per-user install), `get-ecoflow-keydata.ps1` (EcoFlow key table, pinned and hash-checked). |
+| `assets/` | Brand (mascot, 16 px and 32 px icons) and station drawings. `assets/station/*-outline.svg` are the owner's drawings; `*.svg` and `src/Upsy/Flyout/Glyphs/*Glyph.xaml` are generated from them. |
+| `tools/` | `gen_station_glyph.py` (glyph generator), `gen_brand_icons.py` (app icon and brand bitmaps; needs `rsvg-convert` and ImageMagick 7), `install.ps1` (per-user install), `get-ecoflow-keydata.ps1` (EcoFlow key table, pinned and hash-checked). |
 | `local/` | Untracked: BLE spikes (`local/spike` for Bluetti, `local/efspike` for EcoFlow login/handshake/capture), captures, and `local/devices.md` with the owner's real device identifiers. |
 
 ## Commands
@@ -27,6 +27,7 @@ openspec validate <change> --strict
 
 src/Upsy/bin/Release/net10.0-windows10.0.19041.0/upsy.exe --render <dir>   # every tray/flyout/menu state to PNG
 python tools/gen_station_glyph.py                      # after editing the station glyph script
+python tools/gen_brand_icons.py                        # after editing assets/brand/*.svg
 pwsh tools/install.ps1                                 # install/update to %LOCALAPPDATA%\Programs\upsy
 ```
 
@@ -38,7 +39,7 @@ The quality gate (build, test, format) must pass before a task is marked done. O
 - Work goes through OpenSpec: propose, then design mock-up first (`design/upsy.design.html`, light and dark, reviewed with impeccable and /ux-crux-review), then apply. The WPF UI follows the accepted mock-up; change the mock-up before changing the UI.
 - Read-only towards the station: never write registers or send control commands.
 - Pure logic takes plain values and an injected `TimeProvider`; no hardware in unit tests. Use frames captured from the real device as test data.
-- Generated files (`assets/station/{eb3a,delta2}.svg`, `src/Upsy/Flyout/Glyphs/*Glyph.xaml(.cs)`) are edited through their generator, not by hand.
+- Generated files (`assets/station/{eb3a,delta2}.svg`, `src/Upsy/Flyout/Glyphs/*Glyph.xaml(.cs)`, `src/Upsy/Assets/upsy*.{ico,png}`, `docs/images/mascot.png`) are edited through their generator, not by hand.
 - No PII in tracked files, designs or screenshots (the author, Dmytro Vakulenko / GitHub @DrSmile444, may be named): use placeholder device identifiers in the real format (EB3A `2240000000001`, DELTA 2 `R331EXAMPLE00001` / `R33-0001`, address `A1B2C3D4E5F6`). Real ones stay in `local/devices.md`; captured fixtures get their serial swapped.
 - Never commit EcoFlow's key table, an EcoFlow user ID or credentials.
 - Hardware checks are separate tasks from unit-tested ones; mark them done only after they were run on the real device.

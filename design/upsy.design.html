@@ -15,7 +15,7 @@
    --------------------------------------------------------------------------------------------- */
 :root {
   --brand-mustard: #E3A72F; --brand-teal: #2F7F7A; --brand-rust: #D2602F;
-  --brand-cream: #F6ECD6; --brand-ink: #3A2A22; --brand-olive: #7A8F35;
+  --brand-cream: #F6ECD6; --brand-ink: #3A2A22;
   --canvas: #E9E4DA; --canvas-ink: #2B2420; --canvas-muted: #6A5F57;
 }
 .t-light {
@@ -179,6 +179,7 @@ section.board > p { margin: 0 0 20px; max-width: 80ch; color: var(--canvas-muted
 .toast .app .x { margin-left: auto; font-family: "Segoe Fluent Icons","Segoe MDL2 Assets"; font-size: 10px; }
 .toast .body { display: grid; grid-template-columns: 48px 1fr; gap: 12px; }
 .toast .body img { width: 48px; height: 48px; }
+.toast .body.plain { grid-template-columns: 1fr; }
 .toast h4 { margin: 0 0 2px; font-size: 14px; font-weight: 600; }
 .toast p { margin: 0; font-size: 14px; color: var(--ink-2); }
 
@@ -191,6 +192,7 @@ section.board > p { margin: 0 0 20px; max-width: 80ch; color: var(--canvas-muted
 .lockup { display: flex; align-items: center; gap: 14px; margin-top: 24px; }
 .lockup span { font: 600 56px/1 Fredoka, sans-serif; color: var(--brand-ink); letter-spacing: -.01em; }
 .sizes { display: flex; gap: 16px; align-items: end; margin-top: 18px; }
+.sizes figure { margin: 0; text-align: center; font-size: 11px; line-height: 1.3; }
 table.rules { border-collapse: collapse; font-size: 13px; margin-top: 8px; }
 table.rules td, table.rules th { text-align: left; padding: 6px 12px 6px 0; border-bottom: 1px solid rgba(58,42,34,.15); vertical-align: top; }
 </style>
@@ -198,7 +200,7 @@ table.rules td, table.rules th { text-align: left; padding: 6px 12px 6px 0; bord
 <body>
 <!--
 THESIS: upsy is a UPS gauge that belongs to Windows: the taskbar number answers "am I OK?", the flyout explains it; it refuses a custom dashboard window.
-OWN-WORLD: native Windows 11 Fluent surfaces (Mica-grey flyout, 8px radius, Segoe UI Variable, Fluent icons, semantic ok/caution/critical); brand only in the mid-century mascot, app icon and wordmark (mustard, teal, rust, cream, ink).
+OWN-WORLD: native Windows 11 Fluent surfaces (Mica-grey flyout, 8px radius, Segoe UI Variable, Fluent icons, semantic ok/caution/critical); brand only in the mid-century mascot (a battery with a raised fist), app icon and wordmark (mustard, teal, rust, cream, ink).
 STORY: glance at the number; hover for the sentence; click for the station glyph, flows and details; get a toast when mains drops or charge runs low.
 FIRST VIEWPORT: flyout = 104px station glyph left, 40px percentage + one-line state right, then an in/out flow strip, a Details expander, footer with brand and More.
 FORM: brief-pinned (native Windows 11), no concept roll.
@@ -206,7 +208,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 -->
 <div class="page">
   <header class="doc">
-    <img src="../assets/brand/upsy-icon.svg" alt="">
+    <img src="../assets/brand/upsy-mascot.svg" alt="">
     <div>
       <h1>upsy design</h1>
       <p>Mock-up of every surface of the upsy tray app, at real Windows 11 size, light theme left and dark theme right.
@@ -368,7 +370,7 @@ board('Tooltip', 'One line, under the 127-character limit: model, percentage, th
 DELTA 2 · 82% · 103 W out</span><div class="cap">Two stations: the tray station first, then one short line per other station. Other lines are dropped first when the 127-character limit is reached.</div></figure>`);
 
 /* 3. Flyout ------------------------------------------------------------------------------ */
-const FOOT = (paused) => `<div class="footer"><span class="brand"><img src="../assets/brand/upsy-icon.svg" alt="">upsy</span>
+const FOOT = (paused) => `<div class="footer"><span class="brand"><img src="../assets/brand/upsy-icon-16.svg" alt="">upsy</span>
   <span><span class="iconbtn" title="${paused ? 'Resume connection' : 'Pause connection'}"><i class="ico">${paused ? '&#xE768;' : '&#xE769;'}</i></span><span class="iconbtn" title="More"><i class="ico">&#xE712;</i></span></span></div>`;
 const DETAILS = (open) => `<div class="expander"><div class="head"><span>Details</span><i class="ico">${open ? '&#xE70E;' : '&#xE70D;'}</i></div>${open ? `<dl>
   <dt class="grp">Power</dt>
@@ -423,7 +425,7 @@ board('Flyout: no data', 'Without fresh data the flyout never shows stale number
     notice: `<div class="notice"><b>Connection paused</b>The Bluetti phone app can use the station now. No alerts while paused. Resumes by itself at 15:02.<br><span class="btn accent focus-ring">Resume</span></div>` })}<div class="cap">Paused by the user. Keyboard focus shown on Resume.</div></figure>
   <figure>${FLY({ model: 'First start', pct: null, status: 'Looking for a station…', icon: '&#xE895;', st: { off: 1 },
     notice: `<div class="notice"><b>Turn on the station near this PC</b>upsy reads the Bluetti EB3A and the EcoFlow DELTA 2. No pairing needed: it adds the first one it finds and remembers it.</div>` })}<div class="cap">First run, nothing remembered yet.</div></figure>`);
-const WIN = (title, body, actions) => `<div class="win" role="dialog" aria-label="${title}"><div class="bar"><img src="../assets/brand/upsy-icon.svg" alt="">upsy<span class="x">&#xE8BB;</span></div>
+const WIN = (title, body, actions) => `<div class="win" role="dialog" aria-label="${title}"><div class="bar"><img src="../assets/brand/upsy-icon-16.svg" alt="">upsy<span class="x">&#xE8BB;</span></div>
   <div class="body">${body}</div>${actions ? `<div class="actions">${actions}</div>` : ''}</div>`;
 
 /* 3b. Several stations ------------------------------------------------------------------- */
@@ -441,7 +443,7 @@ const SEC = (o) => `<div class="sec">
   ${o.notice || ''}
   ${o.details != null ? (o.details === true ? o.detailsHtml : `<div class="expander"><div class="head"><span>Details</span><i class="ico">&#xE70D;</i></div></div>`) : ''}
 </div>`;
-const FOOT_MULTI = `<div class="footer"><span class="brand"><img src="../assets/brand/upsy-icon.svg" alt="">upsy</span>
+const FOOT_MULTI = `<div class="footer"><span class="brand"><img src="../assets/brand/upsy-icon-16.svg" alt="">upsy</span>
   <span><span class="iconbtn" title="Add station"><i class="ico">&#xE710;</i></span><span class="iconbtn" title="More"><i class="ico">&#xE712;</i></span></span></div>`;
 const FLYM = (...secs) => `<div class="flyout" role="dialog" aria-label="upsy">${secs.join('')}${FOOT_MULTI}</div>`;
 const D2_DETAILS = `<div class="expander"><div class="head"><span>Details</span><i class="ico">&#xE70E;</i></div><dl>
@@ -565,36 +567,35 @@ board('Context menu: several stations', 'With two or more stations the menu adds
   </div></figure>`, 'menu-multi');
 
 /* 5. Toasts ------------------------------------------------------------------------------ */
-const TOAST = (h, p, mascot) => `<div class="toast"><div class="app"><img src="../assets/brand/upsy-icon.svg" alt="">upsy<span class="x">&#xE8BB;</span></div>
-  <div class="body"><img src="../assets/brand/${mascot}" alt=""><div><h4>${h}</h4><p>${p}</p></div></div></div>`;
-board('Notifications', 'Windows toasts from the tray icon. Title names the station and what happened, body says what it means now; each station alerts on its own. Each fires once per event (debounced 5 s for mains). Low fires at the user threshold, critical once more at 10%.', () => `
-  <figure>${TOAST('EB3A: mains power lost', 'On battery at 92%, about 1 h 40 min at 128 W (estimated).', 'upsy-icon.svg')}</figure>
-  <figure>${TOAST('EB3A: battery low, 20%', 'About 20 min left at 131 W (estimated). Save your work.', 'upsy-icon.svg')}</figure>
-  <figure>${TOAST('DELTA 2: battery critical, 10%', '48 min left at 103 W. Shut down or hibernate now.', 'upsy-icon.svg')}</figure>
-  <figure>${TOAST('DELTA 2: mains power is back', 'Charging at 61%, full in 1 h 28 min.', 'upsy-icon.svg')}</figure>`);
+const TOAST = (h, p, mascot) => `<div class="toast"><div class="app"><img src="../assets/brand/upsy-icon-16.svg" alt="">upsy<span class="x">&#xE8BB;</span></div>
+  <div class="body${mascot ? '' : ' plain'}">${mascot ? `<img src="../assets/brand/${mascot}" alt="">` : ''}<div><h4>${h}</h4><p>${p}</p></div></div></div>`;
+board('Notifications', 'Windows toasts from the tray icon. Title names the station and what happened, body says what it means now; each station alerts on its own. Each fires once per event (debounced 5 s for mains). Low fires at the user threshold, critical once more at 10%. Low and critical carry no mascot: its confident face would contradict "act now".', () => `
+  <figure>${TOAST('EB3A: mains power lost', 'On battery at 92%, about 1 h 40 min at 128 W (estimated).', 'upsy-mascot.svg')}</figure>
+  <figure>${TOAST('EB3A: battery low, 20%', 'About 20 min left at 131 W (estimated). Save your work.', null)}</figure>
+  <figure>${TOAST('DELTA 2: battery critical, 10%', '48 min left at 103 W. Shut down or hibernate now.', null)}</figure>
+  <figure>${TOAST('DELTA 2: mains power is back', 'Charging at 61%, full in 1 h 28 min.', 'upsy-mascot.svg')}</figure>`);
 
 /* 6. Brand ------------------------------------------------------------------------------- */
 const brand = document.createElement('section');
 brand.className = 'board';
-brand.innerHTML = `<h2>Brand</h2><p>Upsy, as in "upsy-daisy": what you say when you catch someone who trips. The mascot catches your PC when mains drops. Flat, thick ink outline, mid-century palette. Brand stays outside the native chrome: app icon, toasts, flyout footer, README.</p>
+brand.innerHTML = `<h2>Brand</h2><p>Upsy, as in "upsy-daisy": what you say when you catch someone who trips. The mascot has your PC covered when mains drops. Flat, thick ink outline, mid-century palette. Brand stays outside the native chrome: app icon, toasts, flyout footer, dialog title bars, README.</p>
 <div class="brand-sheet">
   <div><img src="../assets/brand/upsy-mascot.svg" width="320" alt="Upsy mascot"></div>
   <div>
     <h3>Upsy</h3>
-    <div>A battery with a daisy on its terminal. The teal belly is its charge; the bolt says it is a power thing without a word.</div>
-    <div class="lockup"><img src="../assets/brand/upsy-icon.svg" width="72" alt=""><span>upsy</span></div>
-    <div class="sizes"><img src="../assets/brand/upsy-icon.svg" width="64" alt=""><img src="../assets/brand/upsy-icon.svg" width="48" alt=""><img src="../assets/brand/upsy-icon.svg" width="32" alt=""><img src="../assets/brand/upsy-icon.svg" width="24" alt=""><img src="../assets/brand/upsy-icon.svg" width="16" alt=""></div>
+    <div>A battery with a raised fist, ready to take over when mains drops. The teal belly is its charge; the cream bolt says it is a power thing without a word.</div>
+    <div class="lockup"><img src="../assets/brand/upsy-mascot.svg" width="72" alt=""><span>upsy</span></div>
+    <div class="sizes"><figure><img src="../assets/brand/upsy-mascot.svg" width="64" alt="App icon, 64 px"><figcaption>64<br>mascot</figcaption></figure><figure><img src="../assets/brand/upsy-mascot.svg" width="48" alt="App icon, 48 px"><figcaption>48<br>mascot</figcaption></figure><figure><img src="../assets/brand/upsy-icon-32.svg" width="32" alt="App icon, 32 px"><figcaption>32<br>small</figcaption></figure><figure><img src="../assets/brand/upsy-icon-32.svg" width="24" alt="App icon, 24 px"><figcaption>24<br>small</figcaption></figure><figure><img src="../assets/brand/upsy-icon-32.svg" width="20" alt="App icon, 20 px"><figcaption>20<br>small</figcaption></figure><figure><img src="../assets/brand/upsy-icon-16.svg" width="16" alt="App icon, 16 px"><figcaption>16<br>pixel</figcaption></figure></div>
     <div class="swatches">
       <div class="sw"><i style="background:var(--brand-mustard)"></i>Mustard #E3A72F</div>
       <div class="sw"><i style="background:var(--brand-teal)"></i>Teal #2F7F7A</div>
       <div class="sw"><i style="background:var(--brand-rust)"></i>Rust #D2602F</div>
-      <div class="sw"><i style="background:var(--brand-olive)"></i>Olive #7A8F35</div>
       <div class="sw"><i style="background:var(--brand-cream)"></i>Cream #F6ECD6</div>
       <div class="sw"><i style="background:var(--brand-ink)"></i>Ink #3A2A22</div>
     </div>
     <table class="rules"><tr><th>Use</th><th>Where</th></tr>
-      <tr><td>App icon</td><td>.exe, toasts, flyout footer (16 px)</td></tr>
-      <tr><td>Mascot</td><td>README, About; never inside status UI</td></tr>
+      <tr><td>App icon</td><td>.exe, toasts, flyout footer, dialog bars. Art per size: 16 px pixel icon, 20-32 px small icon, 40 px and up the mascot</td></tr>
+      <tr><td>Mascot</td><td>README, app icon from 40 px; never inside status UI</td></tr>
       <tr><td>Wordmark</td><td>Fredoka 600, lower-case "upsy"</td></tr></table>
   </div>
 </div>`;

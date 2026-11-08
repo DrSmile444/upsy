@@ -12,7 +12,7 @@ Native Windows 11 (Fluent). upsy should feel like a part of the taskbar, not an 
 |---|---|---|
 | Tray icon | 16 px at 100% (small-icon metric), redrawn per DPI | Percentage digits, bold, taskbar-theme ink. 2 px bar under the digits: green = charging, amber = at/below threshold, red = ≤10%. Digits take the amber/red too. 100% = Segoe Fluent `EBAA` (full battery). No data = `EC02` (battery with a cross). Paused = `EBA0` (empty battery) with pause bars. Glyphs are rendered through WPF/DirectWrite because GDI+ drops this font at 20 and 24 px. Battery level only (EcoFlow advertisement, no session): the number over a dotted bar. With several stations the icon shows the tray station chosen by the user. |
 | Tooltip | Native NotifyIcon text, ≤127 chars | `EB3A · 58% · 128 W out · about 1 h left`, `EB3A · 54% · charging +264 W`, `EB3A · 100% · on mains`, `upsy · Bluetooth is off`, `DELTA 2 · 84% · battery level only`. Several stations: the tray station's line, then one `<name> · <pct>%…` line per other station, dropped first at the limit. |
-| Flyout | 360 px wide, 8 px radius, 1 px stroke, shadow 0 8 16 | Header grid: 104×96 station glyph, then model · source (12 px secondary), percentage (40 px semibold, "%" 20 px), one status line (14 px semibold with Fluent icon, semantic colour), one sub line (12 px secondary). Then In/Out strip (card), Details expander (grouped Power / Station / Device), footer 48 px (16 px app icon + "upsy", Pause/Resume and More icon buttons). |
+| Flyout | 360 px wide, 8 px radius, 1 px stroke, shadow 0 8 16 | Header grid: 104×96 station glyph, then model · source (12 px secondary), percentage (40 px semibold, "%" 20 px), one status line (14 px semibold with Fluent icon, semantic colour), one sub line (12 px secondary). Then In/Out strip (card), Details expander (grouped Power / Station / Device), footer 48 px (16 px brand icon + "upsy", Pause/Resume and More icon buttons). |
 | Several stations | Same frame, one section per station | Tray station first, marked with a pin (`E718`). Each section is the single-station layout plus a station More button (top right: Pause/Resume, Show in tray, Forget this station…). Footer: brand, Add station (`E710`), More. Forget asks once in a small window that names the station and says it can be added again. |
 | Battery level only | Station section | Advertised % with a muted gauge, model line `DELTA 2 · battery level only`, no In/Out strip, no runtime, no alerts. Status + notice name the reason and one action: Sign in, Try again (key rejected), Open setup guide (key table missing), none (another app holds the link). |
 | No-data flyout | Same frame | No percentage; status line 20 px; a notice card with the reason, the recovery and at most one button (Bluetooth settings / Resume). |
@@ -54,10 +54,10 @@ EB3A live parts: the half ring on the station screen fills to the battery level 
 
 | | |
 |---|---|
-| Mascot | `assets/brand/upsy-mascot.svg`: a mustard battery with a teal "charge" belly and bolt, teal terminal cap with a daisy ("upsy-daisy"), thick ink outline, flat. Never inside status UI. |
-| App icon | `assets/brand/upsy-icon.svg`: mascot bust on a cream tile with a rust sun. Used for the .exe, toasts and the flyout footer. |
+| Mascot | `assets/brand/upsy-mascot.svg`: the owner's drawing of a mustard battery with a raised fist, teal cap and "charge" belly cut by a cream bolt, rust cheeks, thick ink outline, flat. Never inside status UI. |
+| App icon | Art per size: 16 px `assets/brand/upsy-icon-16.svg` (hand-placed pixels), 20-32 px `upsy-icon-32.svg` (heavier outline, bigger eyes, no highlight), 40 px and up the mascot. Used for the .exe and window icons (Windows shows it on the taskbar, in Alt+Tab and Explorer), the flyout footer and dialog title bars (`BrandIcon`: 16 px art at 100 % scale, 32 px above). `python tools/gen_brand_icons.py` writes `upsy.ico`, `upsy-16.png`, `upsy-32.png` and `docs/images/mascot.png`. |
 | Wordmark | Fredoka 600, lower-case `upsy`. |
-| Palette | Mustard #E3A72F, Teal #2F7F7A, Rust #D2602F, Olive #7A8F35, Cream #F6ECD6, Ink #3A2A22. |
+| Palette | Mustard #E3A72F, Teal #2F7F7A, Rust #D2602F, Cream #F6ECD6, Ink #3A2A22. |
 
 ## Copy rules
 

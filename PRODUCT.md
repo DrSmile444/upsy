@@ -41,7 +41,7 @@ There is no official Bluetti Windows app and no tray tool. `upsy` works unpaired
 ## Brand Commitments
 
 - Name: `upsy` (confirmed).
-- A mascot character in a flat, modern mascot-logo style with a mid-century palette (owner's brief), in the spirit of the owner's Buryachenko beet mascot.
+- The mascot is the owner's drawing: a battery with a raised fist, flat, thick ink outline, in a mid-century palette.
 - In-app UI follows native Windows 11 conventions; brand lives in the mascot, accent colour and small details, not in custom chrome.
 
 ## Evidence on Hand
