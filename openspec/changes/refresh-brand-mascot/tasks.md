@@ -16,7 +16,7 @@
 
 ## 4. App
 
-- [ ] 4.1 Add `BrandIcon` and use it in the flyout footer and the three dialog title bars; dialog `Window.Icon` from `upsy.ico`; verify with the quality gate (build with 0 warnings, test, format).
+- [x] 4.1 Add `BrandIcon` and use it in the flyout footer and the three dialog title bars; dialog `Window.Icon` from `upsy.ico`; verify with the quality gate (build with 0 warnings, test, format).
 - [ ] 4.2 Hardware check on Windows: at 100 % the footer and dialog bars show the 16 px art, at 150 % the 32 px art; the .exe, taskbar and Alt+Tab show the new icon; verify by screenshots.
 - [ ] 4.3 Re-render `docs/images` with `upsy.exe --render` on Windows on a 200 % display (render saves at 192 dpi and `BrandIcon` follows the monitor scale); verify that the README screenshots show the new footer icon.
 
