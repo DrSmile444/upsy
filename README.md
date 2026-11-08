@@ -197,6 +197,6 @@ The two factors are set per model in `StationCatalog`.
 
 Later: other EcoFlow models on the same protocol (DELTA 2 Max, River 2/3, DELTA 3), more Bluetti models, a combined "total backup" view, and hibernating or shutting down the PC at critical charge.
 
-Made by Dmytro Vakulenko ([@DrSmile444](https://github.com/DrSmile444)).
+Made by Dmytro Vakulenko ([@DrSmile444](https://github.com/DrSmile444)). Released under the [MIT License](LICENSE), provided as is, without warranty.
 
 Not affiliated with Bluetti or EcoFlow. "Bluetti", "EB3A", "EcoFlow" and "DELTA 2" are used only to name the devices this tool talks to. Third-party credits: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
